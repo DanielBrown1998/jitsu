@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JITSU - Documentação do Sistema</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 30px;
+            background: #fff;
+        }
+        
+        @media print {
+            body {
+                padding: 20px;
+                max-width: 100%;
+            }
+            .page-break {
+                page-break-before: always;
+            }
+            h1, h2, h3 {
+                page-break-after: avoid;
+            }
+            table, pre {
+                page-break-inside: avoid;
+            }
+        }
+        
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 30px 0;
+            border-bottom: 3px solid #1a365d;
+            margin-bottom: 40px;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            color: #1a365d;
+            margin-bottom: 10px;
+        }
+        
+        .header .subtitle {
+            font-size: 1.2em;
+            color: #666;
+        }
+        
+        .badges {
+            margin-top: 15px;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 5px 12px;
+            margin: 3px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+        
+        .badge-blue { background: #3182ce; color: white; }
+        .badge-yellow { background: #ecc94b; color: #333; }
+        .badge-cyan { background: #0891b2; color: white; }
+        
+        /* Table of Contents */
+        .toc {
+            background: #f7fafc;
+            padding: 25px;
+            border-radius: 8px;
+            margin-bottom: 40px;
+            border-left: 4px solid #3182ce;
+        }
+        
+        .toc h2 {
+            color: #1a365d;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+        
+        .toc ol {
+            list-style-position: inside;
+            color: #4a5568;
+        }
+        
+        .toc li {
+            padding: 5px 0;
+        }
+        
+        /* Sections */
+        h2 {
+            color: #1a365d;
+            font-size: 1.6em;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        
+        h3 {
+            color: #2d3748;
+            font-size: 1.3em;
+            margin-top: 25px;
+            margin-bottom: 15px;
+        }
+        
+        h4 {
+            color: #4a5568;
+            font-size: 1.1em;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+        
+        p {
+            margin-bottom: 15px;
+            text-align: justify;
+        }
+        
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 0.95em;
+        }
+        
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border: 1px solid #e2e8f0;
+        }
+        
+        th {
+            background: #1a365d;
+            color: white;
+            font-weight: 600;
+        }
+        
+        tr:nth-child(even) {
+            background: #f7fafc;
+        }
+        
+        tr:hover {
+            background: #edf2f7;
+        }
+        
+        /* Code blocks */
+        pre {
+            background: #1a202c;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 20px 0;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.9em;
+            line-height: 1.5;
+        }
+        
+        code {
+            background: #edf2f7;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.9em;
+            color: #c53030;
+        }
+        
+        /* Lists */
+        ul, ol {
+            margin: 15px 0;
+            padding-left: 30px;
+        }
+        
+        li {
+            margin-bottom: 8px;
+        }
+        
+        /* Checkmarks */
+        .checklist {
+            list-style: none;
+            padding-left: 0;
+        }
+        
+        .checklist li::before {
+            content: "✅ ";
+        }
+        
+        /* Info boxes */
+        .info-box {
+            background: #ebf8ff;
+            border-left: 4px solid #3182ce;
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .warning-box {
+            background: #fffaf0;
+            border-left: 4px solid #dd6b20;
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        /* Diagrams */
+        .diagram {
+            background: #f7fafc;
+            border: 1px solid #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            font-family: 'Consolas', monospace;
+            white-space: pre;
+            overflow-x: auto;
+            font-size: 0.85em;
+            line-height: 1.4;
+        }
+        
+        /* Footer */
+        .footer {
+            margin-top: 60px;
+            padding-top: 20px;
+            border-top: 2px solid #e2e8f0;
+            text-align: center;
+            color: #718096;
+            font-size: 0.9em;
+        }
+        
+        /* Belt colors */
+        .belt-white { background: #f7fafc; color: #333; border: 1px solid #ccc; }
+        .belt-blue { background: #3182ce; color: white; }
+        .belt-purple { background: #805ad5; color: white; }
+        .belt-brown { background: #744210; color: white; }
+        .belt-black { background: #1a202c; color: white; }
+        
+        .belt-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 0.85em;
+        }
+        
+        /* Section numbers */
+        .section-number {
+            color: #3182ce;
+            font-weight: bold;
+        }
+
+        /* Version table */
+        .version-table {
+            margin-top: 40px;
+        }
+        
+        .version-table th {
+            background: #4a5568;
+        }
+    </style>
+</head>
+<body>
+
+<!-- CAPA -->
+<div class="header">
+    <h1>🥋 JITSU</h1>
+    <p class="subtitle">Sistema de Gestão de Academia de Jiu-Jitsu Brasileiro</p>
+    <div class="badges">
+        <span class="badge badge-yellow">Versão 1.0.0</span>
+        <span class="badge badge-blue">Flutter</span>
+        <span class="badge badge-cyan">Firebase</span>
+    </div>
+    <p style="margin-top: 20px; color: #666;">Documentação Técnica e Funcional</p>
+    <p style="color: #999; font-size: 0.9em;">Janeiro 2026</p>
+</div>
+
+<!-- SUMÁRIO -->
+<div class="toc">
+    <h2>📋 SUMÁRIO</h2>
+    <ol>
+        <li>Visão Geral</li>
+        <li>Objetivos do Sistema</li>
+        <li>Arquitetura</li>
+        <li>Modelo de Dados</li>
+        <li>Funcionalidades</li>
+        <li>Casos de Uso</li>
+        <li>Regras de Negócio - Sistema de Graduação</li>
+        <li>Fluxos Principais</li>
+        <li>Requisitos Técnicos</li>
+        <li>Glossário</li>
+    </ol>
+</div>
+
+<!-- SEÇÃO 1 -->
+<h2><span class="section-number">1.</span> VISÃO GERAL</h2>
+
+<h3>1.1 Descrição do Sistema</h3>
+<p>
+    O <strong>JITSU</strong> é um sistema completo de gestão para academias de Jiu-Jitsu Brasileiro, 
+    desenvolvido para automatizar e otimizar os processos administrativos, controle de alunos, 
+    registro de presenças e gerenciamento de graduações seguindo os critérios oficiais da 
+    <strong>CBJJ (Confederação Brasileira de Jiu-Jitsu)</strong> e <strong>IBJJF (International Brazilian Jiu-Jitsu Federation)</strong>.
+</p>
+
+<h3>1.2 Público-Alvo</h3>
+<table>
+    <tr>
+        <th>Perfil</th>
+        <th>Descrição</th>
+    </tr>
+    <tr>
+        <td><strong>Administradores</strong></td>
+        <td>Gestores da academia com acesso total ao sistema</td>
+    </tr>
+    <tr>
+        <td><strong>Professores</strong></td>
+        <td>Instrutores responsáveis por turmas e avaliações</td>
+    </tr>
+    <tr>
+        <td><strong>Alunos</strong></td>
+        <td>Praticantes que acompanham seu progresso</td>
+    </tr>
+</table>
+
+<h3>1.3 Tecnologias Utilizadas</h3>
+<table>
+    <tr>
+        <th>Componente</th>
+        <th>Tecnologia</th>
+    </tr>
+    <tr>
+        <td>Frontend</td>
+        <td>Flutter (Dart)</td>
+    </tr>
+    <tr>
+        <td>Backend</td>
+        <td>Firebase (Firestore, Authentication)</td>
+    </tr>
+    <tr>
+        <td>Arquitetura</td>
+        <td>Clean Architecture</td>
+    </tr>
+    <tr>
+        <td>Banco de Dados</td>
+        <td>NoSQL (Firestore)</td>
+    </tr>
+</table>
+
+<div class="page-break"></div>
+
+<!-- SEÇÃO 2 -->
+<h2><span class="section-number">2.</span> OBJETIVOS DO SISTEMA</h2>
+
+<h3>2.1 Objetivo Geral</h3>
+<p>
+    Fornecer uma solução digital completa para gestão de academias de Jiu-Jitsu, 
+    permitindo controle eficiente de alunos, turmas, presenças e graduações.
+</p>
+
+<h3>2.2 Objetivos Específicos</h3>
+<ul class="checklist">
+    <li>Cadastrar e gerenciar alunos e professores</li>
+    <li>Organizar turmas por horário e tipo (Adulto/Kids)</li>
+    <li>Registrar presenças de forma rápida e confiável</li>
+    <li>Calcular automaticamente elegibilidade para graduações</li>
+    <li>Manter histórico completo de graduações</li>
+    <li>Gerar relatórios gerenciais</li>
+    <li>Exportar dados para análise externa (CSV)</li>
+</ul>
+
+<!-- SEÇÃO 3 -->
+<h2><span class="section-number">3.</span> ARQUITETURA</h2>
+
+<h3>3.1 Clean Architecture</h3>
+<p>
+    O sistema segue os princípios da <strong>Clean Architecture</strong>, garantindo:
+</p>
+<ul>
+    <li><strong>Separação de responsabilidades</strong></li>
+    <li><strong>Testabilidade</strong></li>
+    <li><strong>Manutenibilidade</strong></li>
+    <li><strong>Independência de frameworks</strong></li>
+</ul>
+
+<div class="diagram">
+┌─────────────────────────────────────────────────────────────┐
+│                      PRESENTATION                           │
+│            (UI, Widgets, Controllers, BLoC)                 │
+├─────────────────────────────────────────────────────────────┤
+│                        DOMAIN                               │
+│              (Entities, Use Cases, Interfaces)              │
+├─────────────────────────────────────────────────────────────┤
+│                         DATA                                │
+│           (Repositories, Data Sources, Models)              │
+├─────────────────────────────────────────────────────────────┤
+│                       EXTERNAL                              │
+│              (Firebase, APIs, Local Storage)                │
+└─────────────────────────────────────────────────────────────┘
+</div>
+
+<h3>3.2 Estrutura de Pastas</h3>
+<pre>
+lib/
+├── core/
+│   └── helpers/
+│       └── graduacao_helper.dart    # Critérios CBJJ/IBJJF
+├── domain/
+│   ├── entities/                    # Modelos de domínio
+│   ├── repositories/                # Interfaces de repositórios
+│   └── usecases/                    # Casos de uso
+├── data/
+│   ├── repositories/                # Implementações
+│   └── datasources/                 # Fontes de dados
+└── presentation/
+    ├── pages/                       # Telas
+    ├── widgets/                     # Componentes
+    └── controllers/                 # Gerenciamento de estado
+</pre>
+
+<div class="page-break"></div>
+
+<!-- SEÇÃO 4 -->
+<h2><span class="section-number">4.</span> MODELO DE DADOS</h2>
+
+<h3>4.1 Diagrama de Entidades (NoSQL - Firestore)</h3>
+
+<h4>ALUNO</h4>
+<table>
+    <tr><th>Campo</th><th>Tipo</th><th>Descrição</th></tr>
+    <tr><td>id</td><td>String (CPF)</td><td>Identificador único</td></tr>
+    <tr><td>nome</td><td>String</td><td>Nome completo</td></tr>
+    <tr><td>email</td><td>String</td><td>Email de contato</td></tr>
+    <tr><td>telefone</td><td>String</td><td>Telefone de contato</td></tr>
+    <tr><td>dataNascimento</td><td>String</td><td>Data de nascimento</td></tr>
+    <tr><td>turmasIds</td><td>List&lt;String&gt;</td><td>IDs das turmas vinculadas</td></tr>
+    <tr><td>isAtivo</td><td>Boolean</td><td>Status de atividade</td></tr>
+    <tr><td>statusGraduacao</td><td>Object</td><td>Objeto com dados de graduação</td></tr>
+</table>
+
+<h4>STATUS GRADUAÇÃO (Embedded)</h4>
+<table>
+    <tr><th>Campo</th><th>Tipo</th><th>Descrição</th></tr>
+    <tr><td>faixaAtual</td><td>String</td><td>Nome da faixa atual</td></tr>
+    <tr><td>graus</td><td>Integer (0-4)</td><td>Número de graus na faixa</td></tr>
+    <tr><td>dataUltimaGraduacao</td><td>DateTime</td><td>Data da última promoção</td></tr>
+    <tr><td>aulasRealizadasNestaFaixa</td><td>Integer</td><td>Contador de aulas</td></tr>
+</table>
+
+<h4>TURMA</h4>
+<table>
+    <tr><th>Campo</th><th>Tipo</th><th>Descrição</th></tr>
+    <tr><td>id</td><td>String</td><td>Identificador único</td></tr>
+    <tr><td>nome</td><td>String</td><td>Nome da turma</td></tr>
+    <tr><td>professorId</td><td>String</td><td>ID do professor responsável</td></tr>
+    <tr><td>horarioPadrao</td><td>String</td><td>Horário das aulas</td></tr>
+    <tr><td>tipoDeTurma</td><td>Enum</td><td>adulto ou kids</td></tr>
+</table>
+
+<h4>AULA REALIZADA</h4>
+<table>
+    <tr><th>Campo</th><th>Tipo</th><th>Descrição</th></tr>
+    <tr><td>id</td><td>String</td><td>Identificador único</td></tr>
+    <tr><td>turmaId</td><td>String</td><td>ID da turma</td></tr>
+    <tr><td>dataHora</td><td>DateTime</td><td>Data e hora da aula</td></tr>
+    <tr><td>professorResponsavel</td><td>String</td><td>Professor que ministrou</td></tr>
+    <tr><td>alunosPresentes</td><td>List&lt;String&gt;</td><td>IDs dos alunos presentes</td></tr>
+</table>
+
+<h3>4.2 Relacionamentos</h3>
+<table>
+    <tr><th>Entidade</th><th>Relacionamento</th><th>Entidade</th></tr>
+    <tr><td>Aluno</td><td>N:N</td><td>Turma</td></tr>
+    <tr><td>Turma</td><td>1:N</td><td>AulaRealizada</td></tr>
+    <tr><td>Professor</td><td>1:N</td><td>Turma</td></tr>
+    <tr><td>Aluno</td><td>1:N</td><td>HistoricoGraduacao</td></tr>
+    <tr><td>Aluno</td><td>1:N</td><td>HistoricoPresenca</td></tr>
+</table>
+
+<div class="page-break"></div>
+
+<!-- SEÇÃO 5 -->
+<h2><span class="section-number">5.</span> FUNCIONALIDADES</h2>
+
+<h3>5.1 Módulo de Autenticação</h3>
+<table>
+    <tr><th>Funcionalidade</th><th>Descrição</th></tr>
+    <tr><td>Login com Email</td><td>Autenticação via email e senha</td></tr>
+    <tr><td>Logout</td><td>Encerramento seguro da sessão</td></tr>
+    <tr><td>Recuperar Senha</td><td>Envio de email para redefinição</td></tr>
+</table>
+
+<h3>5.2 Módulo de Alunos</h3>
+<table>
+    <tr><th>Funcionalidade</th><th>Descrição</th></tr>
+    <tr><td>Cadastrar Aluno</td><td>Registro completo com dados pessoais</td></tr>
+    <tr><td>Visualizar Perfil</td><td>Exibição de dados e status de graduação</td></tr>
+    <tr><td>Histórico de Graduações</td><td>Timeline de todas as promoções</td></tr>
+    <tr><td>Editar Dados</td><td>Atualização de informações cadastrais</td></tr>
+</table>
+
+<h3>5.3 Módulo de Presença</h3>
+<table>
+    <tr><th>Funcionalidade</th><th>Descrição</th></tr>
+    <tr><td>Registrar Presença</td><td>Check-in do aluno na aula</td></tr>
+    <tr><td>Listar Turmas</td><td>Visualização das turmas disponíveis</td></tr>
+    <tr><td>Histórico de Presenças</td><td>Registro de todas as aulas frequentadas</td></tr>
+</table>
+
+<h3>5.4 Módulo de Graduação</h3>
+<table>
+    <tr><th>Funcionalidade</th><th>Descrição</th></tr>
+    <tr><td>Verificar Elegibilidade</td><td>Análise automática dos critérios</td></tr>
+    <tr><td>Promover Aluno</td><td>Execução da graduação (grau ou faixa)</td></tr>
+    <tr><td>Calcular Progresso</td><td>Percentual de conclusão do grau atual</td></tr>
+</table>
+
+<h3>5.5 Módulo de Relatórios</h3>
+<table>
+    <tr><th>Funcionalidade</th><th>Descrição</th></tr>
+    <tr><td>Relatório de Turma</td><td>Análise completa por turma</td></tr>
+    <tr><td>Exportar CSV</td><td>Download de dados em formato CSV</td></tr>
+    <tr><td>Alunos Elegíveis</td><td>Lista de alunos prontos para graduação</td></tr>
+</table>
+
+<div class="page-break"></div>
+
+<!-- SEÇÃO 6 -->
+<h2><span class="section-number">6.</span> CASOS DE USO</h2>
+
+<h3>6.1 Diagrama Geral</h3>
+<div class="diagram">
+                        ┌─────────────────────────────────────┐
+                        │           SISTEMA JITSU             │
+                        └─────────────────────────────────────┘
+                                         │
+          ┌──────────────────────────────┼──────────────────────────────┐
+          │                              │                              │
+     ┌────▼────┐                   ┌─────▼─────┐                  ┌─────▼─────┐
+     │  AUTH   │                   │   ALUNO   │                  │  PRESENÇA │
+     └────┬────┘                   └─────┬─────┘                  └─────┬─────┘
+          │                              │                              │
+     ┌────┴────┐                   ┌─────┴─────┐                  ┌─────┴─────┐
+     │• Login  │                   │• Cadastrar│                  │• Registrar│
+     │• Logout │                   │• Perfil   │                  │• Listar   │
+     │• Recover│                   │• Histórico│                  │  Turmas   │
+     └─────────┘                   └───────────┘                  └───────────┘
+
+     ┌────────────┐                ┌─────────────┐
+     │ GRADUAÇÃO  │                │ RELATÓRIOS  │
+     └────┬───────┘                └─────┬───────┘
+          │                              │
+     ┌────┴─────┐                  ┌─────┴─────┐
+     │• Verif.  │                  │• Gerar    │
+     │  Eleg.   │                  │  Relatório│
+     │• Promov. │                  │• Exportar │
+     └──────────┘                  │  CSV      │
+                                   └───────────┘
+</div>
+
+<h3>6.2 Detalhamento dos Casos de Uso</h3>
+
+<h4>UC-01: Login com Email</h4>
+<table>
+    <tr><th width="25%">Campo</th><th>Descrição</th></tr>
+    <tr><td><strong>Ator Principal</strong></td><td>Usuário (Admin/Professor/Aluno)</td></tr>
+    <tr><td><strong>Pré-condição</strong></td><td>Usuário cadastrado no sistema</td></tr>
+    <tr><td><strong>Fluxo Principal</strong></td><td>1. Usuário informa email e senha → 2. Sistema valida credenciais → 3. Sistema retorna token de sessão</td></tr>
+    <tr><td><strong>Pós-condição</strong></td><td>Usuário autenticado com sessão ativa</td></tr>
+</table>
+
+<h4>UC-02: Registrar Presença</h4>
+<table>
+    <tr><th width="25%">Campo</th><th>Descrição</th></tr>
+    <tr><td><strong>Ator Principal</strong></td><td>Professor</td></tr>
+    <tr><td><strong>Pré-condição</strong></td><td>Professor autenticado, Aula criada</td></tr>
+    <tr><td><strong>Fluxo Principal</strong></td><td>1. Professor seleciona turma → 2. Seleciona aluno → 3. Sistema registra presença → 4. Sistema incrementa contador de aulas (+1)</td></tr>
+    <tr><td><strong>Pós-condição</strong></td><td>Presença registrada, contador atualizado</td></tr>
+</table>
+
+<div class="warning-box">
+    <strong>⚠️ Regra Crítica:</strong> O contador <code>aulasRealizadasNestaFaixa</code> é incrementado em +1 a cada presença registrada.
+</div>
+
+<h4>UC-03: Promover Aluno</h4>
+<table>
+    <tr><th width="25%">Campo</th><th>Descrição</th></tr>
+    <tr><td><strong>Ator Principal</strong></td><td>Professor/Admin</td></tr>
+    <tr><td><strong>Pré-condição</strong></td><td>Aluno elegível para graduação</td></tr>
+    <tr><td><strong>Fluxo Principal</strong></td><td>1. Professor confirma promoção → 2. Sistema atualiza faixa/grau → 3. Sistema zera contador de aulas → 4. Sistema salva histórico</td></tr>
+    <tr><td><strong>Pós-condição</strong></td><td>Aluno promovido, histórico registrado</td></tr>
+</table>
+
+<div class="warning-box">
+    <strong>⚠️ Regra Crítica:</strong> O contador <code>aulasRealizadasNestaFaixa</code> é <strong>zerado</strong> após cada promoção.
+</div>
+
+<div class="page-break"></div>
+
+<!-- SEÇÃO 7 -->
+<h2><span class="section-number">7.</span> REGRAS DE NEGÓCIO - SISTEMA DE GRADUAÇÃO</h2>
+
+<h3>7.1 Sistema de Faixas do Jiu-Jitsu Brasileiro</h3>
+<p>
+    O sistema implementa as regras oficiais da <strong>CBJJ/IBJJF</strong> para graduação de faixas.
+</p>
+
+<h4>7.1.1 Hierarquia de Faixas (Adulto - 16+ anos)</h4>
+<div style="display: flex; gap: 10px; flex-wrap: wrap; margin: 20px 0;">
+    <span class="belt-badge belt-white">BRANCA</span>
+    <span style="line-height: 28px;">→</span>
+    <span class="belt-badge belt-blue">AZUL</span>
+    <span style="line-height: 28px;">→</span>
+    <span class="belt-badge belt-purple">ROXA</span>
+    <span style="line-height: 28px;">→</span>
+    <span class="belt-badge belt-brown">MARROM</span>
+    <span style="line-height: 28px;">→</span>
+    <span class="belt-badge belt-black">PRETA</span>
+</div>
+
+<h4>7.1.2 Sistema de Graus</h4>
+<p>Cada faixa (exceto Branca e Preta) possui <strong>4 graus</strong> representados por listras na ponta da faixa.</p>
+<div class="diagram">Grau 0 ──→ Grau 1 ──→ Grau 2 ──→ Grau 3 ──→ Grau 4 ──→ Próxima Faixa</div>
+
+<h3>7.2 Critérios de Graduação por Faixa</h3>
+
+<h4>FAIXA BRANCA → AZUL</h4>
+<table>
+    <tr><th>Critério</th><th>Valor</th></tr>
+    <tr><td>Tempo mínimo na faixa</td><td>12 meses</td></tr>
+    <tr><td>Aulas mínimas por grau</td><td>40 aulas</td></tr>
+    <tr><td>Total de graus</td><td>4</td></tr>
+    <tr><td>Idade mínima</td><td>16 anos</td></tr>
+</table>
+
+<h4>FAIXA AZUL → ROXA</h4>
+<table>
+    <tr><th>Critério</th><th>Valor</th></tr>
+    <tr><td>Tempo mínimo na faixa</td><td>24 meses</td></tr>
+    <tr><td>Aulas mínimas por grau</td><td>50 aulas</td></tr>
+    <tr><td>Total de graus</td><td>4</td></tr>
+    <tr><td>Idade mínima</td><td>16 anos</td></tr>
+</table>
+
+<h4>FAIXA ROXA → MARROM</h4>
+<table>
+    <tr><th>Critério</th><th>Valor</th></tr>
+    <tr><td>Tempo mínimo na faixa</td><td>18 meses</td></tr>
+    <tr><td>Aulas mínimas por grau</td><td>50 aulas</td></tr>
+    <tr><td>Total de graus</td><td>4</td></tr>
+    <tr><td>Idade mínima</td><td>18 anos</td></tr>
+</table>
+
+<h4>FAIXA MARROM → PRETA</h4>
+<table>
+    <tr><th>Critério</th><th>Valor</th></tr>
+    <tr><td>Tempo mínimo na faixa</td><td>12 meses</td></tr>
+    <tr><td>Aulas mínimas por grau</td><td>60 aulas</td></tr>
+    <tr><td>Total de graus</td><td>4</td></tr>
+    <tr><td>Idade mínima</td><td>19 anos</td></tr>
+</table>
+
+<h4>FAIXA PRETA (Graus de Professor)</h4>
+<table>
+    <tr><th>Grau</th><th>Tempo Mínimo</th><th>Idade Mínima</th></tr>
+    <tr><td>1º Grau</td><td>3 anos</td><td>19 anos</td></tr>
+    <tr><td>2º Grau</td><td>3 anos</td><td>22 anos</td></tr>
+    <tr><td>3º Grau</td><td>3 anos</td><td>25 anos</td></tr>
+    <tr><td>4º Grau</td><td>5 anos</td><td>28 anos</td></tr>
+    <tr><td>5º Grau</td><td>5 anos</td><td>33 anos</td></tr>
+    <tr><td>6º Grau</td><td>5 anos</td><td>38 anos</td></tr>
+</table>
+
+<h3>7.3 Fórmula de Cálculo de Progresso</h3>
+<div class="info-box">
+    <strong>Progresso (%) = min(100, (aulas_realizadas / aulas_necessarias) × 100)</strong>
+</div>
+
+<h3>7.4 Verificação de Elegibilidade</h3>
+<p>O sistema verifica automaticamente:</p>
+<ul class="checklist">
+    <li>Número de aulas realizadas ≥ aulas necessárias</li>
+    <li>Tempo decorrido desde última graduação ≥ tempo mínimo</li>
+    <li>Idade do aluno ≥ idade mínima (quando aplicável)</li>
+    <li>Grau atual < máximo de graus (para subir grau)</li>
+    <li>Grau atual = máximo (para subir faixa)</li>
+</ul>
+
+<div class="page-break"></div>
+
+<!-- SEÇÃO 8 -->
+<h2><span class="section-number">8.</span> FLUXOS PRINCIPAIS</h2>
+
+<h3>8.1 Fluxo de Registro de Presença</h3>
+<div class="diagram">
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│  Professor  │────▶│  Selecionar │────▶│  Confirmar  │────▶│   Sistema   │
+│   Acessa    │     │    Turma    │     │    Aluno    │     │  Registra   │
+│   Sistema   │     │             │     │             │     │  Presença   │
+└─────────────┘     └─────────────┘     └─────────────┘     └──────┬──────┘
+                                                                    │
+                                                                    ▼
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│  Histórico  │◀────│   Contador  │◀────│  Atualiza   │◀────│ Incrementa  │
+│    Salvo    │     │ Atualizado  │     │    Aluno    │     │  Aulas +1   │
+└─────────────┘     └─────────────┘     └─────────────┘     └─────────────┘
+</div>
+
+<h3>8.2 Fluxo de Graduação</h3>
+<div class="diagram">
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│  Professor  │────▶│  Verificar  │────▶│   Elegível  │────▶│  Confirmar  │
+│  Solicita   │     │Elegibilidade│     │     ?       │     │  Promoção   │
+│  Graduação  │     │             │     │             │     │             │
+└─────────────┘     └─────────────┘     └──────┬──────┘     └──────┬──────┘
+                                               │                    │
+                                        ┌──────┴──────┐             │
+                                        │             │             │
+                                       NÃO           SIM            │
+                                        │             │             │
+                                        ▼             ▼             ▼
+                                ┌─────────────┐ ┌─────────────┐ ┌─────────────┐
+                                │   Exibir    │ │  Atualizar  │ │   Salvar    │
+                                │   Motivo    │ │ Faixa/Grau  │ │  Histórico  │
+                                └─────────────┘ └──────┬──────┘ └─────────────┘
+                                                       │
+                                                       ▼
+                                               ┌─────────────┐
+                                               │    Zerar    │
+                                               │  Contador   │
+                                               │    Aulas    │
+                                               └─────────────┘
+</div>
+
+<div class="page-break"></div>
+
+<!-- SEÇÃO 9 -->
+<h2><span class="section-number">9.</span> REQUISITOS TÉCNICOS</h2>
+
+<h3>9.1 Requisitos de Hardware (Mobile)</h3>
+<table>
+    <tr><th>Componente</th><th>Mínimo</th><th>Recomendado</th></tr>
+    <tr><td>RAM</td><td>2 GB</td><td>4 GB</td></tr>
+    <tr><td>Armazenamento</td><td>100 MB</td><td>200 MB</td></tr>
+    <tr><td>Processador</td><td>Dual-core</td><td>Quad-core</td></tr>
+</table>
+
+<h3>9.2 Requisitos de Software</h3>
+<table>
+    <tr><th>Componente</th><th>Versão</th></tr>
+    <tr><td>Android</td><td>6.0+ (API 23)</td></tr>
+    <tr><td>iOS</td><td>12.0+</td></tr>
+    <tr><td>Flutter SDK</td><td>3.0+</td></tr>
+    <tr><td>Dart</td><td>3.0+</td></tr>
+</table>
+
+<h3>9.3 Dependências do Projeto</h3>
+<table>
+    <tr><th>Pacote</th><th>Versão</th><th>Descrição</th></tr>
+    <tr><td>firebase_core</td><td>^2.0.0</td><td>Core do Firebase</td></tr>
+    <tr><td>firebase_auth</td><td>^4.0.0</td><td>Autenticação</td></tr>
+    <tr><td>cloud_firestore</td><td>^4.0.0</td><td>Banco de dados</td></tr>
+    <tr><td>collection</td><td>^1.17.0</td><td>Utilitários de coleção</td></tr>
+</table>
+
+<h3>9.4 Requisitos de Conectividade</h3>
+<ul>
+    <li>Conexão com internet para sincronização</li>
+    <li>Suporte a modo offline (cache local)</li>
+</ul>
+
+<!-- SEÇÃO 10 -->
+<h2><span class="section-number">10.</span> GLOSSÁRIO</h2>
+
+<table>
+    <tr><th>Termo</th><th>Definição</th></tr>
+    <tr><td><strong>CBJJ</strong></td><td>Confederação Brasileira de Jiu-Jitsu</td></tr>
+    <tr><td><strong>IBJJF</strong></td><td>International Brazilian Jiu-Jitsu Federation</td></tr>
+    <tr><td><strong>Faixa</strong></td><td>Graduação que indica o nível do praticante</td></tr>
+    <tr><td><strong>Grau</strong></td><td>Subdivisão dentro de cada faixa (0 a 4)</td></tr>
+    <tr><td><strong>Presença</strong></td><td>Registro de participação do aluno em uma aula</td></tr>
+    <tr><td><strong>Turma</strong></td><td>Grupo de alunos com horário definido</td></tr>
+    <tr><td><strong>Clean Architecture</strong></td><td>Padrão arquitetural que separa regras de negócio de frameworks</td></tr>
+    <tr><td><strong>Use Case</strong></td><td>Caso de uso - ação específica do sistema</td></tr>
+    <tr><td><strong>Entity</strong></td><td>Entidade de domínio com regras de negócio</td></tr>
+    <tr><td><strong>Repository</strong></td><td>Interface de acesso a dados</td></tr>
+    <tr><td><strong>Firestore</strong></td><td>Banco de dados NoSQL do Firebase</td></tr>
+</table>
+
+<!-- FOOTER -->
+<div class="footer">
+    <h3>📞 SUPORTE</h3>
+    <p>
+        <strong>Email:</strong> suporte@jitsu.app<br>
+        <strong>GitHub:</strong> github.com/DanielBrown1998/jitsu
+    </p>
+    
+    <table class="version-table" style="margin-top: 30px;">
+        <tr><th>Versão</th><th>Data</th><th>Autor</th><th>Descrição</th></tr>
+        <tr><td>1.0.0</td><td>28/01/2026</td><td>Equipe Jitsu</td><td>Versão inicial</td></tr>
+    </table>
+    
+    <p style="margin-top: 30px;">
+        <em>Documento gerado automaticamente pelo Sistema JITSU</em><br>
+        <strong>© 2026 - Todos os direitos reservados</strong>
+    </p>
+</div>
+
+</body>
+</html>
