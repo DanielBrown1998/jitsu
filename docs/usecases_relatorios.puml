@@ -1,0 +1,50 @@
+@startuml usecases_relatorios
+!theme plain
+
+title Módulo: Relatórios
+
+package "Relatórios" {
+  usecase "GenerateTurmaReportUseCase" as report
+  usecase "ExportDataToCsvUseCase" as export
+}
+
+actor Professor as prof
+actor Admin as admin
+
+prof --> report
+admin --> export
+admin --> report
+
+note right of report
+  **Input:** turmaId, periodo (inicio, fim)
+  **Output:** TurmaReport
+  
+  **Dados Gerados:**
+  - Total de aulas no período
+  - Lista de alunos com:
+    - Presenças
+    - % frequência
+    - Faixa/grau atual
+  - Média de presença da turma
+  - Alunos elegíveis para graduação
+  
+  **Formato:** Objeto estruturado
+end note
+
+note right of export
+  **Input:** tipo (ALUNOS|TURMAS|PRESENCAS), filtros
+  **Output:** String (CSV)
+  
+  **Processamento:**
+  - Buscar dados conforme filtros
+  - Converter para formato CSV
+  - Incluir headers
+  - Encoding UTF-8
+  
+  **Tipos de Export:**
+  - Lista de alunos
+  - Relatório de presença
+  - Histórico de graduações
+end note
+
+@enduml

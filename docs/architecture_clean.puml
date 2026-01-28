@@ -1,0 +1,83 @@
+@startuml architecture_clean
+!theme plain
+
+title Clean Architecture - Jitsu
+
+skinparam componentStyle rectangle
+
+package "Presentation Layer" as presentation #E8F5E9 {
+  [Pages/Screens]
+  [Widgets]
+  [Controllers/Blocs]
+}
+
+package "Domain Layer" as domain #E3F2FD {
+  package "Use Cases" {
+    [Auth UseCases]
+    [Aluno UseCases]
+    [Presença UseCases]
+    [Graduação UseCases]
+    [Relatórios UseCases]
+  }
+  
+  package "Entities" {
+    [Aluno]
+    [Turma]
+    [StatusGraduacao]
+    [AulaRealizada]
+    [HistoricoPresenca]
+  }
+  
+  package "Repositories (Interfaces)" {
+    [IAlunoRepository]
+    [ITurmaRepository]
+    [IAuthRepository]
+  }
+}
+
+package "Data Layer" as data #FFF3E0 {
+  package "Repositories (Impl)" {
+    [AlunoRepositoryImpl]
+    [TurmaRepositoryImpl]
+    [AuthRepositoryImpl]
+  }
+  
+  package "Data Sources" {
+    [FirestoreDataSource]
+    [FirebaseAuthDataSource]
+    [LocalCacheDataSource]
+  }
+}
+
+package "External" as external #FFEBEE {
+  database "Firestore" as firestore
+  [Firebase Auth] as auth
+}
+
+' Dependências
+presentation --> domain
+domain --> data : implements
+data --> external
+
+[Controllers/Blocs] --> [Auth UseCases]
+[Controllers/Blocs] --> [Aluno UseCases]
+[Controllers/Blocs] --> [Presença UseCases]
+[Controllers/Blocs] --> [Graduação UseCases]
+
+[Auth UseCases] --> [IAlunoRepository]
+[Aluno UseCases] --> [IAlunoRepository]
+[Presença UseCases] --> [IAlunoRepository]
+[Presença UseCases] --> [ITurmaRepository]
+[Graduação UseCases] --> [IAlunoRepository]
+
+[AlunoRepositoryImpl] ..|> [IAlunoRepository]
+[TurmaRepositoryImpl] ..|> [ITurmaRepository]
+[AuthRepositoryImpl] ..|> [IAuthRepository]
+
+[AlunoRepositoryImpl] --> [FirestoreDataSource]
+[AuthRepositoryImpl] --> [FirebaseAuthDataSource]
+
+[FirestoreDataSource] --> firestore
+[FirebaseAuthDataSource] --> auth
+
+@enduml

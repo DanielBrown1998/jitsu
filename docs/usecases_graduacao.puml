@@ -1,0 +1,62 @@
+@startuml usecases_graduacao
+!theme plain
+
+title Módulo: Graduação (Diferencial)
+
+package "Graduação" {
+  usecase "CheckGraduationEligibilityUseCase" as check
+  usecase "PromoteAlunoUseCase" as promote
+}
+
+actor Professor as prof
+actor Admin as admin
+
+prof --> check
+admin --> promote
+prof --> promote
+
+check <.. promote : <<precondition>>
+
+note right of check
+  **Input:** alunoId
+  **Output:** ElegibilidadeResult
+  
+  **Regra Principal:**
+  Comparar aulas_realizadas_nesta_faixa
+  VS critérios da faixa atual (GraduacaoHelper)
+  
+  **Verificações:**
+  - Aulas mínimas por grau (40-50)
+  - Tempo mínimo entre graduações
+  - Idade mínima (se aplicável)
+  - Grau máximo atingido?
+  
+  **Retorno:**
+  - elegivel: bool
+  - motivo: String
+  - tipo: GRAU | FAIXA
+  - progresso: 0-100%
+end note
+
+note right of promote
+  **Input:** alunoId, tipo (GRAU|FAIXA)
+  **Output:** Aluno (atualizado)
+  
+  **Ações Atômicas:**
+  1. Verificar elegibilidade (precondição)
+  2. Se GRAU:
+     - Incrementar grau +1
+     - **ZERAR** aulas_realizadas_nesta_faixa
+  3. Se FAIXA:
+     - Mudar faixa_atual
+     - Resetar grau = 0
+     - **ZERAR** aulas_realizadas_nesta_faixa
+  4. Atualizar data_ultima_graduacao
+  5. Salvar em histórico de graduações
+  
+  **Validações:**
+  - Apenas Admin ou Professor
+  - Aluno deve estar elegível
+end note
+
+@enduml

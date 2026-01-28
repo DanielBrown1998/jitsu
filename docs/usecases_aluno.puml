@@ -1,0 +1,51 @@
+@startuml usecases_aluno
+!theme plain
+
+title Módulo: Aluno (Core)
+
+package "Aluno" {
+  usecase "CreateAlunoUseCase" as create
+  usecase "GetAlunoProfileUseCase" as profile
+  usecase "GetAlunoHistoryUseCase" as history
+}
+
+actor Admin as admin
+actor Professor as prof
+actor Aluno as aluno
+
+admin --> create
+prof --> create
+aluno --> profile
+aluno --> history
+prof --> profile
+prof --> history
+
+note right of create
+  **Input:** nome, turmasIds
+  **Output:** Aluno
+  **Regras:**
+  - Apenas Admin/Professor
+  - Criar status_graduacao inicial
+    (Branca, 0 graus, 0 aulas)
+  - Definir is_ativo = true
+end note
+
+note right of profile
+  **Input:** alunoId
+  **Output:** Aluno (com status_graduacao)
+  **Regras:**
+  - Retornar dados completos
+  - Incluir faixa e grau atual
+  - Calcular progresso %
+end note
+
+note right of history
+  **Input:** alunoId
+  **Output:** List<HistoricoGraduacao>
+  **Regras:**
+  - Listar todas as graduações
+  - Ordenar por data DESC
+  - Incluir técnicas aprendidas
+end note
+
+@enduml

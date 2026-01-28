@@ -1,0 +1,43 @@
+@startuml usecases_auth
+!theme plain
+
+title Módulo: Auth
+
+package "Auth" {
+  usecase "LoginWithEmailUseCase" as login
+  usecase "LogoutUseCase" as logout
+  usecase "RecoverPasswordUseCase" as recover
+}
+
+actor Usuário as user
+
+user --> login
+user --> logout
+user --> recover
+
+note right of login
+  **Input:** email, password
+  **Output:** UserCredential
+  **Regras:**
+  - Validar formato email
+  - Verificar credenciais
+  - Gerar token de sessão
+end note
+
+note right of logout
+  **Input:** userId
+  **Output:** void
+  **Regras:**
+  - Invalidar token
+  - Limpar cache local
+end note
+
+note right of recover
+  **Input:** email
+  **Output:** void
+  **Regras:**
+  - Verificar se email existe
+  - Enviar link de recuperação
+end note
+
+@enduml

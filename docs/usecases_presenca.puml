@@ -1,0 +1,42 @@
+@startuml usecases_presenca
+!theme plain
+
+title Módulo: Presença & Aulas
+
+package "Presença & Aulas" {
+  usecase "RegisterAttendanceUseCase" as attendance
+  usecase "GetTurmasUseCase" as turmas
+}
+
+actor Professor as prof
+actor Aluno as aluno
+
+prof --> attendance
+aluno --> turmas
+prof --> turmas
+
+note right of attendance
+  **Input:** alunoId, turmaId, data, tecnica?
+  **Output:** AulaRealizada (atualizada)
+  
+  **Regras Críticas:**
+  1. Adicionar alunoId em alunos_presentes[]
+  2. **INCREMENTAR** aulas_realizadas_nesta_faixa +1
+  3. Criar registro em historico_presenca
+  4. Registrar técnica aprendida (opcional)
+  
+  **Validações:**
+  - Aluno deve pertencer à turma
+  - Não permitir duplicata no mesmo dia/turma
+end note
+
+note right of turmas
+  **Input:** alunoId (opcional)
+  **Output:** List<Turma>
+  **Regras:**
+  - Se alunoId: filtrar turmas do aluno
+  - Se professor: todas as turmas
+  - Incluir horário padrão
+end note
+
+@enduml

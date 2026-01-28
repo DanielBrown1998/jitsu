@@ -1,0 +1,69 @@
+@startuml modelo_sql
+!theme plain
+skinparam linetype ortho
+
+title Modelo de Dados SQL - Jitsu
+
+entity "Faixa" as faixa {
+  *id_faixa : INT <<PK>>
+  --
+  cor : VARCHAR
+  grau : INT
+}
+
+entity "Aluno" as aluno {
+  *id_aluno : INT <<PK>>
+  --
+  nome_aluno : VARCHAR
+  categoria : VARCHAR
+  cpf : VARCHAR
+  *id_faixa : INT <<FK>>
+}
+
+entity "Turma" as turma {
+  *id_turma : INT <<PK>>
+  --
+  categoria : VARCHAR
+  nome_turma : VARCHAR
+}
+
+entity "Treino" as treino {
+  *id_treino : INT <<PK>>
+  --
+  *id_turma : INT <<FK>>
+  start : DATETIME
+  end : DATETIME
+}
+
+entity "aluno_turma" as aluno_turma {
+  *id_aluno : INT <<PK, FK>>
+  *id_turma : INT <<PK, FK>>
+}
+
+entity "alunos_treino" as alunos_treino {
+  *id_aluno_treino : INT <<PK>>
+  --
+  *id_aluno : INT <<FK>>
+  *id_treino : INT <<FK>>
+  presenca : BOOLEAN
+}
+
+' Relacionamentos
+aluno }o--|| faixa : "possui"
+aluno ||--o{ aluno_turma : "1,n"
+turma ||--o{ aluno_turma : "1,n"
+aluno ||--o{ alunos_treino : "1,n"
+treino ||--o{ alunos_treino : "1,n"
+turma ||--o{ treino : "1,n"
+
+note bottom of aluno_turma
+  Tabela associativa N:N
+  PK composta (id_aluno, id_turma)
+end note
+
+note bottom of alunos_treino
+  Controle de presença
+  por treino
+end note
+
+@enduml

@@ -1,0 +1,78 @@
+@startuml modelo_nosql
+!theme plain
+
+title Modelo de Dados NoSQL (Firestore) - Jitsu
+
+package "Coleção: alunos" as col_alunos {
+  object "aluno123" as aluno {
+    id = "aluno123"
+    nome = "Daniel Brown"
+    turmas_ids = ["turma_jiujitsu_noite", "turma_submission"]
+    is_ativo = true
+    --
+    **status_graduacao** (embedded)
+    ..
+    faixa_atual = "Branca"
+    graus = 2
+    data_ultima_graduacao = "2025-09-01"
+    aulas_realizadas_nesta_faixa = 34
+  }
+}
+
+package "Coleção: turmas" as col_turmas {
+  object "turma_jiujitsu_noite" as turma {
+    id = "turma_jiujitsu_noite"
+    nome = "Jiu Jitsu Adulto - 19h"
+    professor_id = "prof_01"
+    horario_padrao = "19:00"
+  }
+}
+
+package "Coleção: aulas_realizadas" as col_aulas {
+  object "aula_2026_01_28_19h" as aula {
+    id = "aula_2026_01_28_19h"
+    turma_id = "turma_jiujitsu_noite"
+    data_hora = "2026-01-28T19:00:00"
+    professor_responsavel = "Mestre Silva"
+    --
+    **alunos_presentes** (array)
+    ..
+    ["aluno123", "aluno456", "aluno789"]
+  }
+}
+
+package "Subcoleção: historico_presenca" as col_historico {
+  object "presenca_xyz" as presenca {
+    id = "presenca_xyz"
+    data = "2026-01-28"
+    turma_id = "turma_jiujitsu_noite"
+    tecnica_aprendida = "Armlock da guarda"
+  }
+}
+
+' Relacionamentos (referências por ID)
+aluno::turmas_ids ..> turma : "referência"
+aula::turma_id ..> turma : "referência"
+aula::alunos_presentes ..> aluno : "referência"
+presenca ..> aluno : "subcoleção de"
+
+note top of col_alunos
+  **Desnormalização:**
+  - status_graduacao embutido
+  - turmas_ids[] substitui tabela pivot
+  - Evita JOINs para leitura
+end note
+
+note top of col_aulas
+  **Array de presenças:**
+  - Check-in direto no documento
+  - Incrementa contador do aluno
+end note
+
+note bottom of col_historico
+  **Subcoleção do Aluno:**
+  /alunos/{alunoId}/historico_presenca
+  Armazena técnicas aprendidas
+end note
+
+@enduml

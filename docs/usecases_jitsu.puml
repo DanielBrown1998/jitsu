@@ -1,0 +1,86 @@
+@startuml usecases_jitsu
+!theme plain
+
+title Casos de Uso - Sistema Jitsu
+left to right direction
+
+actor "Aluno" as aluno
+actor "Professor" as prof
+actor "Admin" as admin
+
+prof -|> aluno
+admin -|> prof
+
+rectangle "Auth" as auth_module #E8F5E9 {
+  usecase "Login com Email" as UC_LOGIN
+  usecase "Logout" as UC_LOGOUT
+  usecase "Recuperar Senha" as UC_RECOVER
+}
+
+rectangle "Aluno (Core)" as aluno_module #E3F2FD {
+  usecase "Criar Aluno" as UC_CREATE_ALUNO
+  usecase "Ver Perfil" as UC_GET_PROFILE
+  usecase "Ver Histórico\nde Graduações" as UC_GET_HISTORY
+}
+
+rectangle "Presença & Aulas" as presenca_module #FFF3E0 {
+  usecase "Registrar Presença\n(+1 aula)" as UC_REGISTER_ATTENDANCE
+  usecase "Listar Turmas" as UC_GET_TURMAS
+}
+
+rectangle "Graduação" as graduacao_module #FCE4EC {
+  usecase "Verificar Elegibilidade\npara Graduação" as UC_CHECK_ELIGIBILITY
+  usecase "Promover Aluno\n(Grau/Faixa)" as UC_PROMOTE
+}
+
+rectangle "Relatórios" as relatorio_module #F3E5F5 {
+  usecase "Gerar Relatório\nda Turma" as UC_REPORT_TURMA
+  usecase "Exportar para CSV" as UC_EXPORT_CSV
+}
+
+' === Auth ===
+aluno --> UC_LOGIN
+aluno --> UC_LOGOUT
+aluno --> UC_RECOVER
+
+' === Aluno Core ===
+admin --> UC_CREATE_ALUNO
+prof --> UC_CREATE_ALUNO
+aluno --> UC_GET_PROFILE
+aluno --> UC_GET_HISTORY
+
+' === Presença ===
+prof --> UC_REGISTER_ATTENDANCE
+aluno --> UC_GET_TURMAS
+
+' === Graduação ===
+prof --> UC_CHECK_ELIGIBILITY
+admin --> UC_PROMOTE
+prof --> UC_PROMOTE
+
+' === Relatórios ===
+prof --> UC_REPORT_TURMA
+admin --> UC_EXPORT_CSV
+
+' === Dependências entre casos de uso ===
+UC_REGISTER_ATTENDANCE ..> UC_CHECK_ELIGIBILITY : <<triggers>>
+UC_PROMOTE ..> UC_GET_HISTORY : <<updates>>
+
+note right of UC_REGISTER_ATTENDANCE
+  Regra: Incrementa
+  aulas_realizadas_nesta_faixa +1
+end note
+
+note right of UC_CHECK_ELIGIBILITY
+  Regra: Compara aulas assistidas
+  vs critérios da faixa atual
+end note
+
+note right of UC_PROMOTE
+  Ação:
+  1. Zera contador de aulas
+  2. Sobe grau ou faixa
+  3. Salva no histórico
+end note
+
+@enduml
