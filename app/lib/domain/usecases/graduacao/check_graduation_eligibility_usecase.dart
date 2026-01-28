@@ -85,7 +85,11 @@ class CheckGraduationEligibilityUseCaseImpl
         faixaAtual: faixa,
         grauAtual: status.graus,
         dataUltimaGraduacao: status.dataUltimaGraduacao,
-        idadeAluno: 18, // TODO: Pegar idade real do aluno
+        idadeAluno:
+            DateTime.now()
+                .difference(DateTime.parse(aluno.dataNascimento))
+                .inDays ~/
+            365,
       );
 
       if (elegFaixa.elegivel) {
