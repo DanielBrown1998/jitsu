@@ -1,27 +1,43 @@
+import 'package:result_dart/result_dart.dart';
+
 import '../../entities/historico_graduacao.dart';
 import '../../repositories/aluno/i_aluno_repository.dart';
 
+class GetAlunoHistoryException implements Exception {
+  final String message;
+  GetAlunoHistoryException(this.message);
+
+  @override
+  String toString() => 'GetAlunoHistoryException: $message';
+}
+
 abstract class GetAlunoHistoryUsecase {
-  Future<List<HistoricoGraduacao>> call(String alunoId);
+  AsyncResult<List<HistoricoGraduacao>> call(String alunoId);
 }
 
 /// Use Case: Ver Histórico de Graduações do Aluno
 class GetAlunoHistoryUseCaseImpl implements GetAlunoHistoryUsecase {
-  final IAlunoRepository _repository;
+  final AlunoRepository _repository;
 
   GetAlunoHistoryUseCaseImpl(this._repository);
 
   @override
-  Future<List<HistoricoGraduacao>> call(String alunoId) async {
+  AsyncResult<List<HistoricoGraduacao>> call(String alunoId) async {
     if (alunoId.isEmpty) {
-      throw ArgumentError('alunoId não pode ser vazio');
+      return Failure(GetAlunoHistoryException('alunoId não pode ser vazio'));
     }
 
-    final historico = await _repository.getHistorico(alunoId);
-
-    // Ordenar por data DESC (mais recente primeiro)
-    historico.sort((a, b) => b.data.compareTo(a.data));
-
-    return historico;
+    return await _repository.getHistorico(alunoId).fold(
+      (historico) {
+        // Ordenar por data DESC (mais recente primeiro)
+        historico.sort((a, b) => b.data.compareTo(a.data));
+        return Success(historico);
+      },
+      (error) => Failure(
+        GetAlunoHistoryException(
+          'Erro ao buscar histórico: ${error.toString()}',
+        ),
+      ),
+    );
   }
 }

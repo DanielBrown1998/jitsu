@@ -2,8 +2,9 @@
 import 'dart:convert';
 
 import 'package:collection/collection.dart';
+import 'package:equatable/equatable.dart';
 
-class AulaRealizada {
+class AulaRealizada extends Equatable {
   final String id;
   final String turmaId;
   final DateTime dataHora;
@@ -50,13 +51,16 @@ class AulaRealizada {
       turmaId: map['turmaId'] as String,
       dataHora: DateTime.fromMillisecondsSinceEpoch(map['dataHora'] as int),
       professorResponsavel: map['professorResponsavel'] as String,
-      alunosPresentes: List<String>.from((map['alunosPresentes'] as List<String>)),
+      alunosPresentes: List<String>.from(
+        (map['alunosPresentes'] as List<String>),
+      ),
     );
   }
 
   String toJson() => json.encode(toMap());
 
-  factory AulaRealizada.fromJson(String source) => AulaRealizada.fromMap(json.decode(source) as Map<String, dynamic>);
+  factory AulaRealizada.fromJson(String source) =>
+      AulaRealizada.fromMap(json.decode(source) as Map<String, dynamic>);
 
   @override
   String toString() {
@@ -72,24 +76,11 @@ class AulaRealizada {
   }
 
   @override
-  bool operator ==(covariant AulaRealizada other) {
-    if (identical(this, other)) return true;
-    final listEquals = const DeepCollectionEquality().equals;
-  
-    return 
-      other.id == id &&
-      other.turmaId == turmaId &&
-      other.dataHora == dataHora &&
-      other.professorResponsavel == professorResponsavel &&
-      listEquals(other.alunosPresentes, alunosPresentes);
-  }
-
-  @override
-  int get hashCode {
-    return id.hashCode ^
-      turmaId.hashCode ^
-      dataHora.hashCode ^
-      professorResponsavel.hashCode ^
-      alunosPresentes.hashCode;
-  }
+  List<Object?> get props => [
+    id,
+    turmaId,
+    dataHora,
+    professorResponsavel,
+    alunosPresentes,
+  ];
 }

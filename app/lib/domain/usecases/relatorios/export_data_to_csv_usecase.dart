@@ -1,3 +1,5 @@
+import 'package:result_dart/result_dart.dart';
+
 import '../../entities/aluno.dart';
 import '../../repositories/aluno/i_aluno_repository.dart';
 import '../../repositories/report/i_report_repository.dart';
@@ -19,165 +21,247 @@ class ExportDataParams {
   });
 }
 
-abstract class IExportDataToCsvUseCase {
-  Future<String> call(ExportDataParams params);
+class ExportDataException implements Exception {
+  final String message;
+  ExportDataException(this.message);
+
+  @override
+  String toString() => 'ExportDataException: $message';
+}
+
+abstract class ExportDataToCsvUseCase {
+  AsyncResult<String> call(ExportDataParams params);
 }
 
 /// Use Case: Exportar Dados para CSV
-class ExportDataToCsvUseCase implements IExportDataToCsvUseCase {
-  final IAlunoRepository _alunoRepository;
-  final ITurmaRepository _turmaRepository;
-  final IReportRepository _reportRepository;
+class ExportDataToCsvUseCaseImpl implements ExportDataToCsvUseCase {
+  final AlunoRepository _alunoRepository;
+  final TurmaRepository _turmaRepository;
+  final ReportRepository _reportRepository;
 
-  ExportDataToCsvUseCase(
+  ExportDataToCsvUseCaseImpl(
     this._alunoRepository,
     this._turmaRepository,
     this._reportRepository,
   );
 
   @override
-  Future<String> call(ExportDataParams params) async {
-    switch (params.tipo) {
-      case ExportType.alunos:
-        return await _exportAlunos(params.turmaId);
-      case ExportType.turmas:
-        return await _exportTurmas();
-      case ExportType.presencas:
-        return await _exportPresencas(params);
-      case ExportType.graduacoes:
-        return await _exportGraduacoes(params.turmaId);
+  AsyncResult<String> call(ExportDataParams params) async {
+    try {
+      switch (params.tipo) {
+        case ExportType.alunos:
+          return await _exportAlunos(params.turmaId);
+        case ExportType.turmas:
+          return await _exportTurmas();
+        case ExportType.presencas:
+          return await _exportPresencas(params);
+        case ExportType.graduacoes:
+          return await _exportGraduacoes(params.turmaId);
+      }
+    } on ExportDataException catch (e) {
+      return Failure(e);
+    } catch (e) {
+      return Failure(
+        ExportDataException('Erro inesperado ao exportar dados: $e'),
+      );
     }
   }
 
-  Future<String> _exportAlunos(String? turmaId) async {
-    final buffer = StringBuffer();
+  AsyncResult<String> _exportAlunos(String? turmaId) async {
+    try {
+      final buffer = StringBuffer();
 
-    // Header
-    buffer.writeln(
-      'ID,Nome,Faixa,Grau,Aulas Realizadas,Data Última Graduação,Ativo',
-    );
-
-    List<Aluno> alunos;
-    if (turmaId != null) {
-      alunos = await _reportRepository.getAlunosByTurma(turmaId);
-    } else {
-      // TODO: Implementar getAll no repository
-      alunos = await _reportRepository.getAllAlunos();
-    }
-
-    for (final aluno in alunos) {
+      // Header
       buffer.writeln(
-        '${aluno.id},'
-        '${_escapeCsv(aluno.nome)},'
-        '${aluno.statusGraduacao.faixaAtual},'
-        '${aluno.statusGraduacao.graus},'
-        '${aluno.statusGraduacao.aulasRealizadasNestaFaixa},'
-        '${_formatDate(aluno.statusGraduacao.dataUltimaGraduacao)},'
-        '${aluno.isAtivo ? "Sim" : "Não"}',
+        'ID,Nome,Faixa,Grau,Aulas Realizadas,Data Última Graduação,Ativo',
       );
-    }
 
-    return buffer.toString();
+      List<Aluno> alunos;
+      if (turmaId != null) {
+        final alunosResult = await _reportRepository.getAlunosByTurma(turmaId);
+        alunos = alunosResult.fold(
+          (a) => a,
+          (e) => throw ExportDataException('Erro ao buscar alunos: $e'),
+        );
+      } else {
+        final alunosResult = await _reportRepository.getAllAlunos();
+        alunos = alunosResult.fold(
+          (a) => a,
+          (e) => throw ExportDataException('Erro ao buscar todos alunos: $e'),
+        );
+      }
+
+      for (final aluno in alunos) {
+        buffer.writeln(
+          '${aluno.id},'
+          '${_escapeCsv(aluno.nome)},'
+          '${aluno.statusGraduacao.faixaAtual},'
+          '${aluno.statusGraduacao.graus},'
+          '${aluno.statusGraduacao.aulasRealizadasNestaFaixa},'
+          '${_formatDate(aluno.statusGraduacao.dataUltimaGraduacao)},'
+          '${aluno.isAtivo ? "Sim" : "Não"}',
+        );
+      }
+
+      return Success(buffer.toString());
+    } on ExportDataException catch (e) {
+      return Failure(e);
+    }
   }
 
-  Future<String> _exportTurmas() async {
-    final buffer = StringBuffer();
+  AsyncResult<String> _exportTurmas() async {
+    try {
+      final buffer = StringBuffer();
 
-    // Header
-    buffer.writeln('ID,Nome,Professor ID,Horário Padrão');
+      // Header
+      buffer.writeln('ID,Nome,Professor ID,Horário Padrão');
 
-    final turmas = await _turmaRepository.getAll();
-
-    for (final turma in turmas) {
-      buffer.writeln(
-        '${turma.id},'
-        '${_escapeCsv(turma.nome)},'
-        '${turma.professorId},'
-        '${turma.horarioPadrao}',
+      final turmasResult = await _turmaRepository.getAll();
+      final turmas = turmasResult.fold(
+        (t) => t,
+        (e) => throw ExportDataException('Erro ao buscar turmas: $e'),
       );
-    }
 
-    return buffer.toString();
+      for (final turma in turmas) {
+        buffer.writeln(
+          '${turma.id},'
+          '${_escapeCsv(turma.nome)},'
+          '${turma.professorId},'
+          '${turma.horarioPadrao}',
+        );
+      }
+
+      return Success(buffer.toString());
+    } on ExportDataException catch (e) {
+      return Failure(e);
+    }
   }
 
-  Future<String> _exportPresencas(ExportDataParams params) async {
-    final buffer = StringBuffer();
+  AsyncResult<String> _exportPresencas(ExportDataParams params) async {
+    try {
+      final buffer = StringBuffer();
 
-    // Header
-    buffer.writeln('Aluno ID,Nome,Turma,Presenças,Frequência %');
+      // Header
+      buffer.writeln('Aluno ID,Nome,Turma,Presenças,Frequência %');
 
-    if (params.turmaId == null ||
-        params.dataInicio == null ||
-        params.dataFim == null) {
-      throw ArgumentError(
-        'turmaId, dataInicio e dataFim são obrigatórios para exportar presenças',
+      if (params.turmaId == null ||
+          params.dataInicio == null ||
+          params.dataFim == null) {
+        return Failure(
+          ExportDataException(
+            'turmaId, dataInicio e dataFim são obrigatórios para exportar presenças',
+          ),
+        );
+      }
+
+      final alunosResult = await _reportRepository.getAlunosByTurma(
+        params.turmaId!,
       );
-    }
+      final alunos = alunosResult.fold(
+        (a) => a,
+        (e) => throw ExportDataException('Erro ao buscar alunos: $e'),
+      );
 
-    final alunos = await _reportRepository.getAlunosByTurma(params.turmaId!);
-    final totalAulas = await _reportRepository.contarAulasPorTurma(
-      params.turmaId!,
-      params.dataInicio!,
-      params.dataFim!,
-    );
-
-    final turmas = await _turmaRepository.getByIds([params.turmaId!]);
-    final nomeTurma = turmas.isNotEmpty ? turmas.first.nome : params.turmaId!;
-
-    for (final aluno in alunos) {
-      final presencas = await _reportRepository.contarPresencasAluno(
-        aluno.id,
+      final totalAulasResult = await _reportRepository.contarAulasPorTurma(
         params.turmaId!,
         params.dataInicio!,
         params.dataFim!,
       );
-      final frequencia = totalAulas > 0 ? (presencas / totalAulas) * 100 : 0.0;
-
-      buffer.writeln(
-        '${aluno.id},'
-        '${_escapeCsv(aluno.nome)},'
-        '${_escapeCsv(nomeTurma)},'
-        '$presencas,'
-        '${frequencia.toStringAsFixed(1)}',
+      final totalAulas = totalAulasResult.fold(
+        (a) => a,
+        (e) => throw ExportDataException('Erro ao contar aulas: $e'),
       );
-    }
 
-    return buffer.toString();
-  }
+      final turmasResult = await _turmaRepository.getByIds([params.turmaId!]);
+      final turmas = turmasResult.fold(
+        (t) => t,
+        (e) => throw ExportDataException('Erro ao buscar turma: $e'),
+      );
+      final nomeTurma = turmas.isNotEmpty ? turmas.first.nome : params.turmaId!;
 
-  Future<String> _exportGraduacoes(String? turmaId) async {
-    final buffer = StringBuffer();
+      for (final aluno in alunos) {
+        final presencasResult = await _reportRepository.contarPresencasAluno(
+          aluno.id,
+          params.turmaId!,
+          params.dataInicio!,
+          params.dataFim!,
+        );
+        final presencas = presencasResult.fold(
+          (p) => p,
+          (e) => throw ExportDataException(
+            'Erro ao contar presenças de ${aluno.id}: $e',
+          ),
+        );
+        final frequencia = totalAulas > 0
+            ? (presencas / totalAulas) * 100
+            : 0.0;
 
-    // Header
-    buffer.writeln(
-      'Aluno ID,Nome,Faixa Anterior,Grau Anterior,Faixa Nova,Grau Novo,Data,Observação',
-    );
-
-    List<Aluno> alunos;
-    if (turmaId != null) {
-      alunos = await _reportRepository.getAlunosByTurma(turmaId);
-    } else {
-      alunos = await _reportRepository.getAllAlunos();
-    }
-
-    for (final aluno in alunos) {
-      final historico = await _alunoRepository.getHistorico(aluno.id);
-
-      for (final h in historico) {
         buffer.writeln(
           '${aluno.id},'
           '${_escapeCsv(aluno.nome)},'
-          '${h.faixaAnterior},'
-          '${h.grauAnterior},'
-          '${h.faixaNova},'
-          '${h.grauNovo},'
-          '${_formatDate(h.data)},'
-          '${_escapeCsv(h.observacao ?? "")}',
+          '${_escapeCsv(nomeTurma)},'
+          '$presencas,'
+          '${frequencia.toStringAsFixed(1)}',
         );
       }
-    }
 
-    return buffer.toString();
+      return Success(buffer.toString());
+    } on ExportDataException catch (e) {
+      return Failure(e);
+    }
+  }
+
+  AsyncResult<String> _exportGraduacoes(String? turmaId) async {
+    try {
+      final buffer = StringBuffer();
+
+      // Header
+      buffer.writeln(
+        'Aluno ID,Nome,Faixa Anterior,Grau Anterior,Faixa Nova,Grau Novo,Data,Observação',
+      );
+
+      List<Aluno> alunos;
+      if (turmaId != null) {
+        final alunosResult = await _reportRepository.getAlunosByTurma(turmaId);
+        alunos = alunosResult.fold(
+          (a) => a,
+          (e) => throw ExportDataException('Erro ao buscar alunos: $e'),
+        );
+      } else {
+        final alunosResult = await _reportRepository.getAllAlunos();
+        alunos = alunosResult.fold(
+          (a) => a,
+          (e) => throw ExportDataException('Erro ao buscar todos alunos: $e'),
+        );
+      }
+
+      for (final aluno in alunos) {
+        final historicoResult = await _alunoRepository.getHistorico(aluno.id);
+        final historico = historicoResult.fold(
+          (h) => h,
+          (e) => throw ExportDataException(
+            'Erro ao buscar histórico de ${aluno.id}: $e',
+          ),
+        );
+
+        for (final h in historico) {
+          buffer.writeln(
+            '${aluno.id},'
+            '${_escapeCsv(aluno.nome)},'
+            '${h.faixaAnterior},'
+            '${h.grauAnterior},'
+            '${h.faixaNova},'
+            '${h.grauNovo},'
+            '${_formatDate(h.data)},'
+            '${_escapeCsv(h.observacao ?? "")}',
+          );
+        }
+      }
+
+      return Success(buffer.toString());
+    } on ExportDataException catch (e) {
+      return Failure(e);
+    }
   }
 
   String _escapeCsv(String value) {

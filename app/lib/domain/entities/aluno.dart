@@ -1,11 +1,12 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'dart:convert';
 
+import 'package:equatable/equatable.dart';
 import 'package:collection/collection.dart';
 
 import 'status_graduacao.dart';
 
-class Aluno {
+class Aluno extends Equatable {
   final String id;
   final String nome;
   final String email;
@@ -87,29 +88,15 @@ class Aluno {
   }
 
   @override
-  bool operator ==(covariant Aluno other) {
-    if (identical(this, other)) return true;
-    final listEquals = const DeepCollectionEquality().equals;
-
-    return other.id == id &&
-        other.nome == nome &&
-        other.email == email &&
-        other.telefone == telefone &&
-        other.dataNascimento == dataNascimento &&
-        listEquals(other.turmasIds, turmasIds) &&
-        other.statusGraduacao == statusGraduacao &&
-        other.isAtivo == isAtivo;
-  }
-
-  @override
-  int get hashCode {
-    return id.hashCode ^
-        nome.hashCode ^
-        email.hashCode ^
-        telefone.hashCode ^
-        dataNascimento.hashCode ^
-        turmasIds.hashCode ^
-        statusGraduacao.hashCode ^
-        isAtivo.hashCode;
-  }
+  List<Object?> get props => [
+        id,
+        nome,
+        email,
+        telefone,
+        dataNascimento,
+        turmasIds,
+        statusGraduacao,
+        isAtivo,
+      ];
 }
+

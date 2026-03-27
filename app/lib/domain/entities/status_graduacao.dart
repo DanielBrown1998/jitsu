@@ -1,7 +1,8 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'dart:convert';
+import 'package:equatable/equatable.dart';
 
-class StatusGraduacao {
+class StatusGraduacao extends Equatable {
   final String faixaAtual;
   final int graus; // 0 a 4
   final DateTime dataUltimaGraduacao;
@@ -64,20 +65,10 @@ class StatusGraduacao {
   }
 
   @override
-  bool operator ==(covariant StatusGraduacao other) {
-    if (identical(this, other)) return true;
-
-    return other.faixaAtual == faixaAtual &&
-        other.graus == graus &&
-        other.dataUltimaGraduacao == dataUltimaGraduacao &&
-        other.aulasRealizadasNestaFaixa == aulasRealizadasNestaFaixa;
-  }
-
-  @override
-  int get hashCode {
-    return faixaAtual.hashCode ^
-        graus.hashCode ^
-        dataUltimaGraduacao.hashCode ^
-        aulasRealizadasNestaFaixa.hashCode;
-  }
+  List<Object?> get props => [
+    faixaAtual,
+    graus,
+    dataUltimaGraduacao,
+    aulasRealizadasNestaFaixa,
+  ];
 }

@@ -1,4 +1,5 @@
 import 'package:app/core/helpers/graduacao_helper.dart';
+import 'package:result_dart/result_dart.dart';
 
 import '../../entities/aluno.dart';
 import '../../entities/status_graduacao.dart';
@@ -21,20 +22,28 @@ class CreateAlunoParams {
   });
 }
 
+class CreateAlunoException implements Exception {
+  final String message;
+  CreateAlunoException(this.message);
+
+  @override
+  String toString() => 'CreateAlunoException: $message';
+}
+
 abstract class CreateAlunoUsecase {
-  Future<Aluno> call(CreateAlunoParams params);
+  AsyncResult<Aluno> call(CreateAlunoParams params);
 }
 
 /// Use Case: Criar Aluno (Exclusivo Admin/Professor)
 class CreateAlunoUseCaseImpl implements CreateAlunoUsecase {
-  final IAlunoRepository _repository;
+  final AlunoRepository _repository;
 
   CreateAlunoUseCaseImpl(this._repository);
 
   @override
-  Future<Aluno> call(CreateAlunoParams params) async {
+  AsyncResult<Aluno> call(CreateAlunoParams params) async {
     if (params.nome.trim().isEmpty) {
-      throw ArgumentError('Nome do aluno é obrigatório');
+      return Failure(CreateAlunoException('Nome do aluno é obrigatório'));
     }
 
     final novoAluno = Aluno(
@@ -52,6 +61,12 @@ class CreateAlunoUseCaseImpl implements CreateAlunoUsecase {
       dataNascimento: params.dataNascimento.trim(),
     );
 
-    return await _repository.create(novoAluno);
+    return await _repository.create(novoAluno).fold((aluno) => Success(aluno), (
+      error,
+    ) {
+      return Failure(
+        CreateAlunoException('Erro ao criar aluno: ${error.toString()}'),
+      );
+    });
   }
 }

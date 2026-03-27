@@ -1,9 +1,11 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'dart:convert';
 
+import 'package:equatable/equatable.dart';
+
 import 'entities.dart';
 
-class Turma {
+class Turma extends Equatable {
   final String id;
   final String nome;
   final String professorId;
@@ -64,23 +66,12 @@ class Turma {
   }
 
   @override
-  bool operator ==(covariant Turma other) {
-    if (identical(this, other)) return true;
-  
-    return 
-      other.id == id &&
-      other.nome == nome &&
-      other.professorId == professorId &&
-      other.horarioPadrao == horarioPadrao &&
-      other.tipoDeTurma == tipoDeTurma;
-  }
-
-  @override
-  int get hashCode {
-    return id.hashCode ^
-      nome.hashCode ^
-      professorId.hashCode ^
-      horarioPadrao.hashCode ^
-      tipoDeTurma.hashCode;
-  }
+  List<Object?> get props => [
+        id,
+        nome,
+        professorId,
+        horarioPadrao,
+        tipoDeTurma,
+      ];
 }
+

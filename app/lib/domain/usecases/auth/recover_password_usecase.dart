@@ -1,21 +1,40 @@
+import 'package:result_dart/result_dart.dart';
+
 import '../../repositories/auth/i_auth_repository.dart';
 
+class RecoverPasswordException implements Exception {
+  final String message;
+  RecoverPasswordException(this.message);
+
+  @override
+  String toString() => 'RecoverPasswordException: $message';
+}
+
 abstract class RecoverPasswordUseCase {
-  Future<void> call(String email);
+  AsyncResult<Unit> call(String email);
 }
 
 class RecoverPasswordUseCaseImpl implements RecoverPasswordUseCase {
-  final IAuthRepository _repository;
+  final AuthRepository _repository;
 
   RecoverPasswordUseCaseImpl(this._repository);
 
   @override
-  Future<void> call(String email) async {
+  AsyncResult<Unit> call(String email) async {
     if (!_isValidEmail(email)) {
-      throw ArgumentError('Formato de email inválido');
+      return Failure(RecoverPasswordException('Formato de email inválido'));
     }
 
-    await _repository.recoverPassword(email);
+    return await _repository
+        .recoverPassword(email)
+        .fold(
+          (_) => const Success(unit),
+          (error) => Failure(
+            RecoverPasswordException(
+              'Erro ao recuperar senha: ${error.toString()}',
+            ),
+          ),
+        );
   }
 
   bool _isValidEmail(String email) {

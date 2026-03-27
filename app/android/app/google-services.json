@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "357459399579",
+    "project_id": "jitsu-343c4",
+    "storage_bucket": "jitsu-343c4.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:357459399579:android:9ecef60ea4bea30820073e",
+        "android_client_info": {
+          "package_name": "com.jiujitsu.app.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDhBO97xnfuKL-PnTyOFd7h6Qq6PngcMKM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

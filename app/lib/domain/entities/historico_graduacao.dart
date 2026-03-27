@@ -1,8 +1,9 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'dart:convert';
 
+import 'package:equatable/equatable.dart';
 
-class HistoricoGraduacao {
+class HistoricoGraduacao extends Equatable {
   final String id;
   final String faixaAnterior;
   final int grauAnterior;
@@ -61,13 +62,16 @@ class HistoricoGraduacao {
       faixaNova: map['faixaNova'] as String,
       grauNovo: map['grauNovo'] as int,
       data: DateTime.fromMillisecondsSinceEpoch(map['data'] as int),
-      observacao: map['observacao'] != null ? map['observacao'] as String : null,
+      observacao: map['observacao'] != null
+          ? map['observacao'] as String
+          : null,
     );
   }
 
   String toJson() => json.encode(toMap());
 
-  factory HistoricoGraduacao.fromJson(String source) => HistoricoGraduacao.fromMap(json.decode(source) as Map<String, dynamic>);
+  factory HistoricoGraduacao.fromJson(String source) =>
+      HistoricoGraduacao.fromMap(json.decode(source) as Map<String, dynamic>);
 
   @override
   String toString() {
@@ -75,27 +79,13 @@ class HistoricoGraduacao {
   }
 
   @override
-  bool operator ==(covariant HistoricoGraduacao other) {
-    if (identical(this, other)) return true;
-  
-    return 
-      other.id == id &&
-      other.faixaAnterior == faixaAnterior &&
-      other.grauAnterior == grauAnterior &&
-      other.faixaNova == faixaNova &&
-      other.grauNovo == grauNovo &&
-      other.data == data &&
-      other.observacao == observacao;
-  }
-
-  @override
-  int get hashCode {
-    return id.hashCode ^
-      faixaAnterior.hashCode ^
-      grauAnterior.hashCode ^
-      faixaNova.hashCode ^
-      grauNovo.hashCode ^
-      data.hashCode ^
-      observacao.hashCode;
-  }
+  List<Object?> get props => [
+    id,
+    faixaAnterior,
+    grauAnterior,
+    faixaNova,
+    grauNovo,
+    data,
+    observacao,
+  ];
 }

@@ -2,8 +2,9 @@
 import 'dart:convert';
 
 import 'package:collection/collection.dart';
+import 'package:equatable/equatable.dart';
 
-class Professor {
+class Professor extends Equatable {
   final String id;
   final String nome;
   final List<String> turmasIds;
@@ -50,7 +51,8 @@ class Professor {
 
   String toJson() => json.encode(toMap());
 
-  factory Professor.fromJson(String source) => Professor.fromMap(json.decode(source) as Map<String, dynamic>);
+  factory Professor.fromJson(String source) =>
+      Professor.fromMap(json.decode(source) as Map<String, dynamic>);
 
   @override
   String toString() {
@@ -58,22 +60,5 @@ class Professor {
   }
 
   @override
-  bool operator ==(covariant Professor other) {
-    if (identical(this, other)) return true;
-    final listEquals = const DeepCollectionEquality().equals;
-  
-    return 
-      other.id == id &&
-      other.nome == nome &&
-      listEquals(other.turmasIds, turmasIds) &&
-      other.isAtivo == isAtivo;
-  }
-
-  @override
-  int get hashCode {
-    return id.hashCode ^
-      nome.hashCode ^
-      turmasIds.hashCode ^
-      isAtivo.hashCode;
-  }
+  List<Object?> get props => [id, nome, turmasIds, isAtivo];
 }

@@ -1,4 +1,6 @@
 import 'package:app/core/helpers/graduacao_helper.dart';
+import 'package:result_dart/result_dart.dart';
+
 import '../../repositories/aluno/i_aluno_repository.dart';
 
 enum TipoElegibilidade { grau, faixa, nenhum }
@@ -25,102 +27,121 @@ class ElegibilidadeResult {
   });
 }
 
+class CheckGraduationEligibilityException implements Exception {
+  final String message;
+  CheckGraduationEligibilityException(this.message);
+
+  @override
+  String toString() => 'CheckGraduationEligibilityException: $message';
+}
+
 abstract class CheckGraduationEligibilityUsecase {
-  Future<ElegibilidadeResult> call(String alunoId);
+  AsyncResult<ElegibilidadeResult> call(String alunoId);
 }
 
 /// Use Case: Verificar Elegibilidade para Graduação
 /// Regra: Compara aulas assistidas vs critérios da faixa atual
 class CheckGraduationEligibilityUseCaseImpl
     implements CheckGraduationEligibilityUsecase {
-  final IAlunoRepository _repository;
+  final AlunoRepository _repository;
 
   CheckGraduationEligibilityUseCaseImpl(this._repository);
 
   @override
-  Future<ElegibilidadeResult> call(String alunoId) async {
+  AsyncResult<ElegibilidadeResult> call(String alunoId) async {
     if (alunoId.isEmpty) {
-      throw ArgumentError('alunoId não pode ser vazio');
-    }
-
-    final aluno = await _repository.getById(alunoId);
-    if (aluno == null) {
-      throw Exception('Aluno não encontrado');
-    }
-
-    final status = aluno.statusGraduacao;
-    final faixa = GraduacaoHelper.faixaFromString(status.faixaAtual);
-    if (faixa == null) {
-      throw Exception('Faixa inválida: ${status.faixaAtual}');
-    }
-
-    // Calcular progresso atual
-    final progresso = GraduacaoHelper.calcularProgressoGrau(
-      faixaAtual: faixa,
-      aulasRealizadas: status.aulasRealizadasNestaFaixa,
-      dataUltimaGraduacao: status.dataUltimaGraduacao,
-    );
-
-    // Verificar elegibilidade para GRAU
-    final elegGrau = GraduacaoHelper.verificarElegibilidadeGrau(
-      faixaAtual: faixa,
-      grauAtual: status.graus,
-      aulasRealizadas: status.aulasRealizadasNestaFaixa,
-      dataUltimaGraduacao: status.dataUltimaGraduacao,
-    );
-
-    if (elegGrau.elegivel) {
-      return ElegibilidadeResult(
-        elegivel: true,
-        tipo: TipoElegibilidade.grau,
-        motivo: elegGrau.motivo,
-        progresso: progresso,
-        proximoGrau: status.graus + 1,
+      return Failure(
+        CheckGraduationEligibilityException('alunoId não pode ser vazio'),
       );
     }
 
-    // Se pronto para próxima faixa
-    if (elegGrau.prontoParaProximaFaixa) {
-      final elegFaixa = GraduacaoHelper.verificarElegibilidadeFaixa(
-        faixaAtual: faixa,
-        grauAtual: status.graus,
-        dataUltimaGraduacao: status.dataUltimaGraduacao,
-        idadeAluno:
-            DateTime.now()
-                .difference(DateTime.parse(aluno.dataNascimento))
-                .inDays ~/
-            365,
-      );
+    return await _repository.getById(alunoId).fold(
+      (aluno) {
+        final status = aluno.statusGraduacao;
+        final faixa = GraduacaoHelper.faixaFromString(status.faixaAtual);
+        if (faixa == null) {
+          return Failure(
+            CheckGraduationEligibilityException(
+              'Faixa inválida: ${status.faixaAtual}',
+            ),
+          );
+        }
 
-      if (elegFaixa.elegivel) {
-        return ElegibilidadeResult(
-          elegivel: true,
-          tipo: TipoElegibilidade.faixa,
-          motivo: elegFaixa.motivo,
-          progresso: 100,
-          proximaFaixa: elegFaixa.proximaFaixa != null
-              ? GraduacaoHelper.getNomeFaixa(elegFaixa.proximaFaixa!)
-              : null,
+        // Calcular progresso atual
+        final progresso = GraduacaoHelper.calcularProgressoGrau(
+          faixaAtual: faixa,
+          aulasRealizadas: status.aulasRealizadasNestaFaixa,
+          dataUltimaGraduacao: status.dataUltimaGraduacao,
         );
-      }
 
-      return ElegibilidadeResult(
-        elegivel: false,
-        tipo: TipoElegibilidade.faixa,
-        motivo: elegFaixa.motivo,
-        progresso: progresso,
-        mesesRestantes: elegFaixa.mesesRestantes,
-      );
-    }
+        // Verificar elegibilidade para GRAU
+        final elegGrau = GraduacaoHelper.verificarElegibilidadeGrau(
+          faixaAtual: faixa,
+          grauAtual: status.graus,
+          aulasRealizadas: status.aulasRealizadasNestaFaixa,
+          dataUltimaGraduacao: status.dataUltimaGraduacao,
+        );
 
-    // Não elegível para nada ainda
-    return ElegibilidadeResult(
-      elegivel: false,
-      tipo: TipoElegibilidade.nenhum,
-      motivo: elegGrau.motivo,
-      progresso: progresso,
-      aulasRestantes: elegGrau.aulasRestantes,
-      mesesRestantes: elegGrau.mesesRestantes,
+        if (elegGrau.elegivel) {
+          return Success(ElegibilidadeResult(
+            elegivel: true,
+            tipo: TipoElegibilidade.grau,
+            motivo: elegGrau.motivo,
+            progresso: progresso,
+            proximoGrau: status.graus + 1,
+          ));
+        }
+
+        // Se pronto para próxima faixa
+        if (elegGrau.prontoParaProximaFaixa) {
+          final elegFaixa = GraduacaoHelper.verificarElegibilidadeFaixa(
+            faixaAtual: faixa,
+            grauAtual: status.graus,
+            dataUltimaGraduacao: status.dataUltimaGraduacao,
+            idadeAluno:
+                DateTime.now()
+                    .difference(DateTime.parse(aluno.dataNascimento))
+                    .inDays ~/
+                365,
+          );
+
+          if (elegFaixa.elegivel) {
+            return Success(ElegibilidadeResult(
+              elegivel: true,
+              tipo: TipoElegibilidade.faixa,
+              motivo: elegFaixa.motivo,
+              progresso: 100,
+              proximaFaixa: elegFaixa.proximaFaixa != null
+                  ? GraduacaoHelper.getNomeFaixa(elegFaixa.proximaFaixa!)
+                  : null,
+            ));
+          }
+
+          return Success(ElegibilidadeResult(
+            elegivel: false,
+            tipo: TipoElegibilidade.faixa,
+            motivo: elegFaixa.motivo,
+            progresso: progresso,
+            mesesRestantes: elegFaixa.mesesRestantes,
+          ));
+        }
+
+        // Não elegível para nada ainda
+        return Success(ElegibilidadeResult(
+          elegivel: false,
+          tipo: TipoElegibilidade.nenhum,
+          motivo: elegGrau.motivo,
+          progresso: progresso,
+          aulasRestantes: elegGrau.aulasRestantes,
+          mesesRestantes: elegGrau.mesesRestantes,
+        ));
+      },
+      (error) => Failure(
+        CheckGraduationEligibilityException(
+          'Erro ao verificar elegibilidade: ${error.toString()}',
+        ),
+      ),
     );
   }
 }
+
