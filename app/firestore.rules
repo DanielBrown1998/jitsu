@@ -2,18 +2,57 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
 
-    // This rule allows anyone with your Firestore database reference to view, edit,
-    // and delete all data in your Firestore database. It is useful for getting
-    // started, but it is configured to expire after 30 days because it
-    // leaves your app open to attackers. At that time, all client
-    // requests to your Firestore database will be denied.
-    //
-    // Make sure to write security rules for your app before that time, or else
-    // all client requests to your Firestore database will be denied until you Update
-    // your rules
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+
+      // Registro inicial: o proprio usuario cria seu documento como student.
+      allow create: if isOwner(userId)
+        && request.resource.data.userId == userId
+        && request.resource.data.role == 'student';
+
+      // Usuario comum pode atualizar campos proprios, mas nao pode alterar role.
+      allow update: if (isOwner(userId)
+          && request.resource.data.role == resource.data.role)
+        || isAdmin();
+
+      allow delete: if isAdmin();
+    }
+
+    match /alunos/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+
+      // Registro inicial cria aluno para o proprio uid.
+      allow create: if isOwner(userId)
+        && request.resource.data.id == userId;
+
+      allow update: if isOwner(userId) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    match /professores/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+
+      // Somente admin pode promover/criar professor.
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Mantem acesso amplo para demais colecoes por enquanto.
     match /{document=**} {
-      allow read, write: if request.time < timestamp.date(2026, 2, 27);
+      allow read, write: if isSignedIn();
     }
   }
 }

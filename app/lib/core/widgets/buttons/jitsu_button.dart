@@ -63,11 +63,13 @@ class JitsuButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final foregroundColor = _foregroundColor(context);
+
     return ElevatedButton(
       onPressed: isLoading ? null : onPressed,
       style: ElevatedButton.styleFrom(
         backgroundColor: _backgroundColor(context),
-        foregroundColor: _foregroundColor(context),
+        foregroundColor: foregroundColor,
         padding: padding,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(borderRadius),
@@ -90,12 +92,19 @@ class JitsuButton extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                if (icon != null) ...[icon!, const SizedBox(width: 8)],
+                if (icon != null) ...[
+                  IconTheme.merge(
+                    data: IconThemeData(color: foregroundColor),
+                    child: icon!,
+                  ),
+                  const SizedBox(width: 8),
+                ],
                 Text(
                   label,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600),
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: foregroundColor,
+                  ),
                 ),
               ],
             ),

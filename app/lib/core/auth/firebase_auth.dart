@@ -10,6 +10,22 @@ class FirebaseAuthService {
 
   static User? get currentUser => _auth.currentUser;
 
+  static Future<String?> getIdToken({bool forceRefresh = false}) async {
+    try {
+      final user = _auth.currentUser;
+      if (user == null) {
+        throw AuthException('Nenhum usuário autenticado.');
+      }
+      return await user.getIdToken(forceRefresh);
+    } catch (e) {
+      throw AuthException(
+        'Erro ao obter token de autenticação: ${e.toString()}',
+      );
+    }
+  }
+
+  static Stream<User?> get authState => _auth.authStateChanges();
+
   static Future<User> registerWithEmail({
     required String email,
     required String password,
@@ -19,7 +35,11 @@ class FirebaseAuthService {
         email: email,
         password: password,
       );
-      return credential.user!;
+      final user = credential.user;
+      if (user == null) {
+        throw AuthException('Cadastro realizado sem usuario retornado.');
+      }
+      return user;
     } on FirebaseAuthException catch (e) {
       throw AuthException(_mapFirebaseAuthError(e));
     } catch (e) {
@@ -38,7 +58,11 @@ class FirebaseAuthService {
         email: email,
         password: password,
       );
-      return credential.user!;
+      final user = credential.user;
+      if (user == null) {
+        throw AuthException('Login realizado sem usuario retornado.');
+      }
+      return user;
     } on FirebaseAuthException catch (e) {
       throw AuthException(_mapFirebaseAuthError(e));
     } catch (e) {

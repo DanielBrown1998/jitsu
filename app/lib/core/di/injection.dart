@@ -1,7 +1,9 @@
 import "package:app/core/firebase/instance.dart";
+import "package:app/core/storage/storage.dart";
 import "package:app/domain/repositories/repositories.dart";
 import "package:app/domain/usecases/usecases.dart";
 import "package:app/infra/source/source.dart";
+import "package:app/ui/auth/logic/vm.dart";
 import "package:get_it/get_it.dart";
 
 final getIt = GetIt.instance;
@@ -10,15 +12,21 @@ Future<void> initDependencies() async {
   final firestore = FirebaseInstance.firestore;
 
   //Sources
+  getIt.registerLazySingleton<AppStorage>(() => SecureAppStorage());
   getIt.registerLazySingleton<AlunoSource>(
     () => AlunoSourceImpl(firestore: firestore),
   );
   getIt.registerLazySingleton<AulaSource>(
     () => AulaSourceImpl(firestore: firestore),
   );
-  getIt.registerLazySingleton<AuthSource>(() => AuthSourceImpl());
+  getIt.registerLazySingleton<AuthSource>(
+    () => AuthSourceImpl(storage: getIt<AppStorage>()),
+  );
   getIt.registerLazySingleton<HistoricoPresencaSource>(
     () => HistoricoPresencaSourceImpl(firestore: firestore),
+  );
+  getIt.registerLazySingleton<ProfessorSource>(
+    () => ProfessorSourceImpl(firestore: firestore),
   );
   getIt.registerLazySingleton<ReportSource>(
     () => ReportSourceImpl(firestore: firestore),
@@ -43,6 +51,9 @@ Future<void> initDependencies() async {
       source: getIt<HistoricoPresencaSource>(),
     ),
   );
+  getIt.registerLazySingleton<ProfessorRepository>(
+    () => ProfessorRepositoryImpl(source: getIt<ProfessorSource>()),
+  );
   getIt.registerLazySingleton<ReportRepository>(
     () => ReportRepositoryImpl(source: getIt<ReportSource>()),
   );
@@ -51,6 +62,10 @@ Future<void> initDependencies() async {
   );
 
   //UseCases
+
+  getIt.registerLazySingleton<WatchAuthStateUseCase>(
+    () => WatchAuthStateUseCaseImpl(getIt<AuthRepository>()),
+  );
 
   getIt.registerLazySingleton<LoginWithEmailUseCase>(
     () => LoginWithEmailUseCaseImpl(getIt<AuthRepository>()),
@@ -61,11 +76,26 @@ Future<void> initDependencies() async {
   getIt.registerLazySingleton<RecoverPasswordUseCase>(
     () => RecoverPasswordUseCaseImpl(getIt<AuthRepository>()),
   );
+  getIt.registerLazySingleton<RegisterUseCase>(
+    () => RegisterUseCaseImpl(getIt<AuthRepository>()),
+  );
+  getIt.registerLazySingleton<GetUserRoleUsecase>(
+    () => GetUserRoleUseCaseImpl(getIt<AuthRepository>()),
+  );
+  getIt.registerLazySingleton<FindUserIdByEmailUsecase>(
+    () => FindUserIdByEmailUseCaseImpl(getIt<AuthRepository>()),
+  );
+  getIt.registerLazySingleton<CreateStudentProfileUsecase>(
+    () => CreateStudentProfileUseCaseImpl(getIt<AuthRepository>()),
+  );
   getIt.registerLazySingleton<GetAlunoHistoryUseCaseImpl>(
     () => GetAlunoHistoryUseCaseImpl(getIt<AlunoRepository>()),
   );
   getIt.registerLazySingleton<GetAlunoProfileUsecase>(
     () => GetAlunoProfileUseCaseImpl(getIt<AlunoRepository>()),
+  );
+  getIt.registerLazySingleton<GetProfessorProfileUsecase>(
+    () => GetProfessorProfileUseCaseImpl(getIt<ProfessorRepository>()),
   );
   getIt.registerLazySingleton<CreateAlunoUsecase>(
     () => CreateAlunoUseCaseImpl(getIt<AlunoRepository>()),
@@ -100,6 +130,22 @@ Future<void> initDependencies() async {
     () => GenerateTurmaReportUseCaseImpl(
       getIt<TurmaRepository>(),
       getIt<ReportRepository>(),
+    ),
+  );
+
+  //ViewModels
+
+  getIt.registerLazySingleton<AuthVm>(
+    () => AuthVm(
+      watchAuthStateUseCase: getIt<WatchAuthStateUseCase>(),
+      loginWithEmailUseCase: getIt<LoginWithEmailUseCase>(),
+      logoutUseCase: getIt<LogoutUsecase>(),
+      recoverPasswordUseCase: getIt<RecoverPasswordUseCase>(),
+      registerUseCase: getIt<RegisterUseCase>(),
+      getUserRoleUsecase: getIt<GetUserRoleUsecase>(),
+      createStudentProfileUsecase: getIt<CreateStudentProfileUsecase>(),
+      getAlunoProfileUsecase: getIt<GetAlunoProfileUsecase>(),
+      getProfessorProfileUsecase: getIt<GetProfessorProfileUsecase>(),
     ),
   );
 }

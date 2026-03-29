@@ -1,3 +1,5 @@
+import 'package:app/core/di/injection.dart';
+import 'package:app/ui/auth/logic/vm.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -7,6 +9,11 @@ class InjectionWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Provider(create: (context) {}, child: child);
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider<AuthVm>.value(value: getIt.get<AuthVm>()),
+      ],
+      child: child,
+    );
   }
 }
