@@ -11,6 +11,7 @@ class TurmaModel extends Turma {
     required super.professorId,
     required super.horarioPadrao,
     required super.tipoDeTurma,
+    required super.diasSemana,
   });
 
   factory TurmaModel.fromEntity(Turma entity) => TurmaModel(
@@ -19,6 +20,7 @@ class TurmaModel extends Turma {
     professorId: entity.professorId,
     horarioPadrao: entity.horarioPadrao,
     tipoDeTurma: entity.tipoDeTurma,
+    diasSemana: entity.diasSemana,
   );
 
   Turma toEntity() => Turma(
@@ -27,7 +29,24 @@ class TurmaModel extends Turma {
     professorId: professorId,
     horarioPadrao: horarioPadrao,
     tipoDeTurma: tipoDeTurma,
+    diasSemana: diasSemana,
   );
+
+  static List<int> _parseDiasSemana(Map<String, dynamic> map) {
+    final raw = map['diasSemana'];
+    if (raw is List) {
+      final parsed = raw
+          .map((value) => value is int ? value : int.tryParse(value.toString()))
+          .whereType<int>()
+          .toList();
+
+      if (parsed.isNotEmpty) {
+        return parsed;
+      }
+    }
+
+    return Turma.defaultDiasSemana;
+  }
 
   factory TurmaModel.fromMap(Map<String, dynamic> map) => TurmaModel(
     id: map['id'] as String,
@@ -35,6 +54,7 @@ class TurmaModel extends Turma {
     professorId: map['professorId'] as String,
     horarioPadrao: map['horarioPadrao'] as String,
     tipoDeTurma: TipoDeTurma.fromDisplayName(map['tipoDeTurma'] as String),
+    diasSemana: _parseDiasSemana(map),
   );
 
   factory TurmaModel.fromJson(String source) => TurmaModel.fromMap(

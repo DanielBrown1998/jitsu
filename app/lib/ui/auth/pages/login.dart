@@ -1,7 +1,7 @@
 import 'package:app/core/widgets/buttons/jitsu_button.dart';
 import 'package:app/core/widgets/feedback/jitsu_snackbar.dart';
 import 'package:app/core/widgets/forms/jitsu_text_field.dart';
-import 'package:app/ui/admin_home/route/route.dart';
+import 'package:app/ui/dashboard/route/route.dart';
 import 'package:app/ui/auth/logic/command.dart';
 import 'package:app/ui/auth/logic/state.dart';
 import 'package:app/ui/auth/logic/vm.dart';
@@ -106,7 +106,7 @@ class _LoginPageState extends State<LoginPage>
     if (vm.state.isLoggedIn) {
       final target = switch (vm.state.role) {
         UserRole.student => StudentHomeRoute.path,
-        UserRole.admin || UserRole.professor => AdminHomeRoute.path,
+        UserRole.admin || UserRole.professor => DashboardRoute.path,
       };
       context.go(target);
       return;

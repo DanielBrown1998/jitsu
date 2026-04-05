@@ -127,13 +127,11 @@ class AuthSourceImpl implements AuthSource {
     try {
       final userDoc = await _usersCollection.doc(userId).get();
       final roleRaw = userDoc.data()?['role']?.toString().trim().toLowerCase();
-
       final role = switch (roleRaw) {
         'admin' => AuthUserRole.admin,
         'professor' => AuthUserRole.professor,
         _ => AuthUserRole.student,
       };
-
       return Success(role);
     } on FirebaseException catch (e) {
       return Failure(

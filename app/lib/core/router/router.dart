@@ -20,7 +20,7 @@ abstract final class AppRouter {
       if (!isLoggedOut && isOnAuthArea) {
         return switch (authVm.state.role) {
           UserRole.student => StudentHomeRoute.path,
-          UserRole.admin || UserRole.professor => AdminHomeRoute.path,
+          UserRole.admin || UserRole.professor => DashboardRoute.path,
         };
       }
 
@@ -29,7 +29,7 @@ abstract final class AppRouter {
     initialLocation: AuthRoute.path,
     routes: [
       AuthRoute.route,
-      AdminHomeRoute.route,
+      DashboardRoute.route,
       StudentHomeRoute.route,
       StudentsListRoute.route,
       StudentsProfileRoute.route,

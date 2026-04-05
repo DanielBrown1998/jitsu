@@ -3,7 +3,8 @@ import "package:app/core/storage/storage.dart";
 import "package:app/domain/repositories/repositories.dart";
 import "package:app/domain/usecases/usecases.dart";
 import "package:app/infra/source/source.dart";
-import "package:app/ui/auth/logic/vm.dart";
+import "package:app/ui/auth/di/auth_injection.dart";
+import 'package:app/ui/dashboard/di/injection_dashboard.dart';
 import "package:get_it/get_it.dart";
 
 final getIt = GetIt.instance;
@@ -134,18 +135,6 @@ Future<void> initDependencies() async {
   );
 
   //ViewModels
-
-  getIt.registerLazySingleton<AuthVm>(
-    () => AuthVm(
-      watchAuthStateUseCase: getIt<WatchAuthStateUseCase>(),
-      loginWithEmailUseCase: getIt<LoginWithEmailUseCase>(),
-      logoutUseCase: getIt<LogoutUsecase>(),
-      recoverPasswordUseCase: getIt<RecoverPasswordUseCase>(),
-      registerUseCase: getIt<RegisterUseCase>(),
-      getUserRoleUsecase: getIt<GetUserRoleUsecase>(),
-      createStudentProfileUsecase: getIt<CreateStudentProfileUsecase>(),
-      getAlunoProfileUsecase: getIt<GetAlunoProfileUsecase>(),
-      getProfessorProfileUsecase: getIt<GetProfessorProfileUsecase>(),
-    ),
-  );
+  initializeAuthFeature(getIt);
+  initializeDashboardFeature(getIt);
 }

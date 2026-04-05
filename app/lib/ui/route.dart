@@ -1,5 +1,5 @@
 
-export '../../ui/admin_home/route/route.dart';
+export 'dashboard/route/route.dart';
 export '../../ui/attendance_register/route/route.dart';
 export '../../ui/attendance_select/route/route.dart';
 export '../../ui/attendance_success/route/route.dart';

@@ -1,302 +1,457 @@
+from __future__ import annotations
+
 """
-Script para gerar dados fake no Cloud Firestore para o projeto Jitsu.
+Credenciais para teste (3 alunos):
+  - email: aluno001@jitsu.test | senha: Aluno@101 | uid: Ulx3ASguyGSBpKTUoo8APBMhzrf2
+  - email: aluno002@jitsu.test | senha: Aluno@102 | uid: naOcRwCNvnPoDpED0AdaAJWM8wm1
+  - email: aluno003@jitsu.test | senha: Aluno@103 | uid: gV64TcrW7YZH4kqhLukRAxqovrq2
+"""
+
+"""Seed completo do Firebase para o projeto Jitsu.
+
+O script faz:
+1. Limpeza total das colecoes usadas pelo app no Firestore.
+2. Recriacao de admin/professores com UIDs fixos definidos no codigo.
+3. Criacao de turmas (cada professor com ao menos 1 turma).
+4. Criacao de contas de alunos no Firebase Auth e respectivos documentos no Firestore.
+5. Vinculo dos alunos as turmas + aulas e historicos.
 
 Uso:
     python generate_fakes.py
 
 Requisitos:
     pip install firebase-admin faker
-    
-Configuração Firebase:
-    1. Baixe o arquivo JSON de credenciais do Firebase Console
-    2. Exporte a variável: GOOGLE_APPLICATION_CREDENTIALS=/path/to/seervice-account.json
-    3. Execute o script
 """
 
-import firebase_admin
-from firebase_admin import credentials
-from firebase_admin import firestore
-from faker import Faker
+
 from datetime import datetime, timedelta
+import os
 import random
 import string
-from typing import List, Dict
-import os
+import sys
+from typing import Dict, List, Tuple
 
-# Inicializar Firebase
+import firebase_admin
+from firebase_admin import auth, credentials, firestore
+from faker import Faker
+
+
+# =============================
+# Configuracao fixa de usuarios
+# =============================
+
+ADMIN_ACCOUNT = {
+    "uid": "4rE575UaEzPcmbQHosUmM3yK5Tz2",
+    "nome": "Daniel",
+    "email": "db7somais7@gmail.com",
+}
+
+PROFESSOR_ACCOUNTS = [
+    {
+        "uid": "76Nv1FKckTWh3e241p2a7QJA9Mw1",
+        "nome": "Carlos",
+        "email": "daniel_mingozzi@hotmail.com",
+    },
+    {
+        "uid": "3dTv3QTCzcRoBneJJLHB9k62Uzg2",
+        "nome": "Bruno",
+        "email": "daniel_profissional1998@hotmail.com",
+    },
+    {
+        "uid": "no1TJkf0zhYonTncNQqudO90fsQ2",
+        "nome": "Rafael",
+        "email": "daniel_academico1998@hotmail.com",
+    },
+]
+
+
+# =============================
+# Parametros de geracao
+# =============================
+
+NUM_TURMAS_PER_PROFESSOR = 2
+NUM_ALUNOS = 24
+AULAS_PER_TURMA = 6
+
+TIPO_TURMA = ["Adulto", "Kids"]
+FAIXAS = ["Branca", "Amarela", "Laranja", "Verde", "Azul", "Roxa", "Marrom", "Preta"]
+
+COLLECTIONS_TO_WIPE = [
+    "users",
+    "professores",
+    "turmas",
+    "alunos",
+    "aulas_realizadas",
+    "historicos_presenca",
+    "historicos_graduacao",
+]
+
+
+# =============================
+# Inicializacao Firebase
+# =============================
+
 script_dir = os.path.dirname(os.path.abspath(__file__))
-cred_path = os.path.join(script_dir, 'serviceAccountKey.json')
+cred_path = os.path.join(script_dir, "serviceAccountKey.json")
 
 if not os.path.exists(cred_path):
     raise FileNotFoundError(
-        f"❌ Arquivo de credenciais não encontrado em: {cred_path}\n"
-        f"Por favor, baixe o arquivo serviceAccountKey.json do Firebase Console "
-        f"e salve em: {cred_path}"
+        f"Arquivo de credenciais nao encontrado em: {cred_path}\n"
+        f"Baixe o serviceAccountKey.json no Firebase Console e salve nesse caminho."
     )
 
 cred = credentials.Certificate(cred_path)
 firebase_admin.initialize_app(cred)
 
 db = firestore.client()
-fake = Faker('pt_BR')
-
-# Configuração de quantidades
-NUM_PROFESSORS = 6
-NUM_TURMAS_PER_PROFESSOR = 2
-NUM_ALUNOS = 50
-AULAS_PER_TURMA = 8
-
-# Enums
-TIPO_TURMA = ['adulto', 'kids']
-FAIXAS = ['branca', 'amarela', 'laranja', 'verde', 'azul', 'roxa', 'marrom', 'preta']
+fake = Faker("pt_BR")
 
 
 def gerar_id_unico(prefix: str) -> str:
-    """Gera ID único com prefixo."""
-    random_str = ''.join(random.choices(string.ascii_lowercase + string.digits, k=10))
-    return f"{prefix}_{random_str}"
+    sufixo = "".join(random.choices(string.ascii_lowercase + string.digits, k=10))
+    return f"{prefix}_{sufixo}"
 
 
-def criar_professors() -> List[Dict]:
-    """Cria dados de professores."""
-    professors = []
-    for i in range(NUM_PROFESSORS):
-        prof_id = gerar_id_unico("prof")
-        professor = {
-            'id': prof_id,
-            'nome': fake.name(),
-            'email': fake.email(),
-            'telefone': fake.phone_number()[:15],
-            'turmasIds': [],
-            'isAtivo': True,
-        }
-        professors.append(professor)
-    return professors
+def to_millis(value: datetime) -> int:
+    return int(value.timestamp() * 1000)
+
+
+def apagar_colecao(nome_colecao: str, lote: int = 300) -> int:
+    total = 0
+    while True:
+        # Evita ficar 5 minutos em retries quando as credenciais estao invalidas.
+        docs = list(
+            db.collection(nome_colecao).limit(lote).stream(retry=None, timeout=30)
+        )
+        if not docs:
+            break
+
+        batch = db.batch()
+        for doc in docs:
+            batch.delete(doc.reference)
+            total += 1
+        batch.commit()
+
+    return total
+
+
+def limpar_firestore() -> None:
+    print("Limpando dados atuais do Firestore...")
+    total_geral = 0
+    for colecao in COLLECTIONS_TO_WIPE:
+        removidos = apagar_colecao(colecao)
+        total_geral += removidos
+        print(f"  - {colecao}: {removidos} removidos")
+    print(f"Total removido: {total_geral}\n")
+
+
+def upsert_auth_user(uid: str, email: str, display_name: str) -> str:
+    """Garante que o usuario existe no Firebase Auth sem alterar senha existente."""
+    try:
+        user = auth.get_user(uid)
+        return user.email or email
+    except auth.UserNotFoundError:
+        user = auth.create_user(
+            uid=uid,
+            email=email,
+            password="Professor@123",
+            display_name=display_name,
+            email_verified=True,
+        )
+        return user.email or email
 
 
 def criar_status_graduacao() -> Dict:
-    """Cria um status de graduação inicial."""
     return {
-        'faixaAtual': random.choice(FAIXAS[:4]),  # Faixas iniciais
-        'graus': random.randint(0, 4),
-        'dataUltimaGraduacao': datetime.now().isoformat(),
-        'aulasRealizadasNestaFaixa': random.randint(0, 30),
+        "faixaAtual": random.choice(FAIXAS[:4]),
+        "graus": random.randint(0, 4),
+        "dataUltimaGraduacao": to_millis(
+            datetime.now() - timedelta(days=random.randint(60, 500))
+        ),
+        "aulasRealizadasNestaFaixa": random.randint(0, 30),
     }
 
 
-def criar_turmas(professors: List[Dict]) -> List[Dict]:
-    """Cria turmas associadas aos professores."""
-    turmas = []
-    turma_ids_por_professor = {prof['id']: [] for prof in professors}
-    
-    for professor in professors:
-        for _ in range(NUM_TURMAS_PER_PROFESSOR):
+def criar_turmas(professores: List[Dict]) -> List[Dict]:
+    turmas: List[Dict] = []
+    for professor in professores:
+        for i in range(NUM_TURMAS_PER_PROFESSOR):
             turma_id = gerar_id_unico("turma")
             turma = {
-                'id': turma_id,
-                'nome': f"Turma {fake.word().capitalize()} - {fake.first_name()}",
-                'professorId': professor['id'],
-                'horarioPadrao': f"{random.randint(6, 19)}:{random.randint(0, 5)*10:02d}",
-                'tipoDeTurma': random.choice(TIPO_TURMA),
+                "id": turma_id,
+                "nome": f"Turma {i + 1} - {professor['nome'].split()[0]}",
+                "professorId": professor["id"],
+                "horarioPadrao": f"{random.randint(6, 20)}:{random.choice([0, 10, 20, 30, 40, 50]):02d}",
+                "tipoDeTurma": random.choice(TIPO_TURMA),
+                "diasSemana": sorted(
+                    random.sample(range(1, 8), k=random.randint(2, 4))
+                ),
             }
             turmas.append(turma)
-            turma_ids_por_professor[professor['id']].append(turma_id)
-    
-    # Atualizar turmasIds dos professores
-    for professor in professors:
-        professor['turmasIds'] = turma_ids_por_professor[professor['id']]
-    
+            professor["turmasIds"].append(turma_id)
     return turmas
 
 
-def criar_alunos(turmas: List[Dict]) -> List[Dict]:
-    """Cria alunos associados às turmas."""
-    alunos = []
-    turma_ids = [turma['id'] for turma in turmas]
-    
-    for i in range(NUM_ALUNOS):
-        aluno_id = gerar_id_unico("aluno")
-        # Cada aluno em 1-3 turmas
-        turmas_do_aluno = random.sample(turma_ids, k=random.randint(1, 3))
-        
+def criar_contas_e_documentos_alunos(turmas: List[Dict]) -> Tuple[List[Dict], List[Dict]]:
+    alunos: List[Dict] = []
+    credenciais: List[Dict] = []
+    turma_ids = [turma["id"] for turma in turmas]
+
+    for i in range(1, NUM_ALUNOS + 1):
+        aluno_email = f"aluno{i:03d}@jitsu.test"
+        aluno_senha = f"Aluno@{100 + i}"
+        nome = fake.name()
+
+        # Reaproveita conta se ja existir por email, senao cria.
+        try:
+            user = auth.get_user_by_email(aluno_email)
+        except auth.UserNotFoundError:
+            user = auth.create_user(
+                email=aluno_email,
+                password=aluno_senha,
+                display_name=nome,
+                email_verified=True,
+            )
+
+        turmas_do_aluno = random.sample(turma_ids, k=random.randint(1, min(3, len(turma_ids))))
         aluno = {
-            'id': aluno_id,
-            'nome': fake.name(),
-            'email': fake.email(),
-            'telefone': fake.phone_number()[:15],
-            'dataNascimento': fake.date_of_birth(minimum_age=5, maximum_age=70).isoformat(),
-            'turmasIds': turmas_do_aluno,
-            'statusGraduacao': criar_status_graduacao(),
-            'isAtivo': random.choice([True, True, True, False]),  # 75% ativos
+            "id": user.uid,
+            "nome": nome,
+            "email": aluno_email,
+            "telefone": fake.phone_number()[:15],
+            "dataNascimento": fake.date_of_birth(minimum_age=8, maximum_age=60).isoformat(),
+            "turmasIds": turmas_do_aluno,
+            "statusGraduacao": criar_status_graduacao(),
+            "isAtivo": True,
         }
+
         alunos.append(aluno)
-    
-    return alunos
+        credenciais.append({"email": aluno_email, "senha": aluno_senha, "uid": user.uid})
+
+    return alunos, credenciais
 
 
 def criar_aulas_realizadas(turmas: List[Dict], alunos: List[Dict]) -> List[Dict]:
-    """Cria aulas realizadas para cada turma."""
-    aulas = []
-    # Mapa de alunos por turma
-    alunos_por_turma = {turma['id']: [] for turma in turmas}
+    aulas: List[Dict] = []
+    alunos_por_turma: Dict[str, List[str]] = {turma["id"]: [] for turma in turmas}
+
     for aluno in alunos:
-        for turma_id in aluno['turmasIds']:
-            if turma_id in alunos_por_turma:
-                alunos_por_turma[turma_id].append(aluno['id'])
-    
+        for turma_id in aluno["turmasIds"]:
+            alunos_por_turma[turma_id].append(aluno["id"])
+
     for turma in turmas:
-        alunos_na_turma = alunos_por_turma[turma['id']]
+        alunos_na_turma = alunos_por_turma[turma["id"]]
         if not alunos_na_turma:
             continue
-        
-        for i in range(AULAS_PER_TURMA):
-            aula_id = gerar_id_unico("aula")
-            data_aula = datetime.now() - timedelta(days=random.randint(1, 90))
-            
-            # 80% de presença média
-            num_presentes = max(1, int(len(alunos_na_turma) * random.uniform(0.6, 1.0)))
-            alunosPresentes = random.sample(alunos_na_turma, k=num_presentes)
-            
-            aula = {
-                'id': aula_id,
-                'turmaId': turma['id'],
-                'dataHora': data_aula.isoformat(),
-                'professorResponsavel': turma['professorId'],
-                'alunosPresentes': alunosPresentes,
-            }
-            aulas.append(aula)
-    
+
+        for _ in range(AULAS_PER_TURMA):
+            data_aula = datetime.now() - timedelta(days=random.randint(1, 120))
+            presentes = random.sample(
+                alunos_na_turma,
+                k=max(1, int(len(alunos_na_turma) * random.uniform(0.6, 1.0))),
+            )
+            aulas.append(
+                {
+                    "id": gerar_id_unico("aula"),
+                    "turmaId": turma["id"],
+                    "dataHora": to_millis(data_aula),
+                    "professorResponsavel": turma["professorId"],
+                    "alunosPresentes": presentes,
+                }
+            )
+
     return aulas
 
 
 def criar_historicos_presenca(alunos: List[Dict]) -> List[Dict]:
-    """Cria históricos de presença para alunos."""
-    historicos_presenca = []
-    
+    historicos: List[Dict] = []
     for aluno in alunos:
-        # 3-10 registros de presença por aluno
-        for _ in range(random.randint(3, 10)):
-            historico_id = gerar_id_unico("hist_pres")
-            data = datetime.now() - timedelta(days=random.randint(1, 120))
-            
-            historico = {
-                'id': historico_id,
-                'data': data.isoformat(),
-                'turmaId': random.choice(aluno['turmasIds']) if aluno['turmasIds'] else 'sem-turma',
-                'tecnicaAprendida': fake.word() if random.random() > 0.3 else None,
-            }
-            historicos_presenca.append(historico)
-    
-    return historicos_presenca
+        for _ in range(random.randint(3, 8)):
+            historicos.append(
+                {
+                    "id": gerar_id_unico("hist_pres"),
+                    "alunoId": aluno["id"],
+                    "data": to_millis(datetime.now() - timedelta(days=random.randint(1, 180))),
+                    "turmaId": random.choice(aluno["turmasIds"]),
+                    "tecnicaAprendida": fake.word() if random.random() > 0.35 else None,
+                }
+            )
+    return historicos
 
 
 def criar_historicos_graduacao(alunos: List[Dict]) -> List[Dict]:
-    """Cria históricos de graduação para alunos."""
-    historicos_grad = []
-    
+    historicos: List[Dict] = []
     for aluno in alunos:
-        # Alguns alunos tiveram promoções
-        if random.random() > 0.6:
-            faixas_ordenadas = FAIXAS
-            idx_faixa_atual = faixas_ordenadas.index(aluno['statusGraduacao']['faixaAtual'])
-            
-            if idx_faixa_atual < len(faixas_ordenadas) - 1:
-                historico_id = gerar_id_unico("hist_grad")
-                faixa_anterior = faixas_ordenadas[idx_faixa_atual]
-                faixa_nova = faixas_ordenadas[idx_faixa_atual + 1]
-                
-                historico = {
-                    'id': historico_id,
-                    'faixaAnterior': faixa_anterior,
-                    'grauAnterior': aluno['statusGraduacao']['graus'],
-                    'faixaNova': faixa_nova,
-                    'grauNovo': random.randint(0, 4),
-                    'data': (datetime.now() - timedelta(days=random.randint(30, 300))).isoformat(),
-                    'observacao': fake.sentence(nb_words=5) if random.random() > 0.5 else None,
-                }
-                historicos_grad.append(historico)
-    
-    return historicos_grad
+        if random.random() < 0.45:
+            continue
+
+        faixa_atual = aluno["statusGraduacao"]["faixaAtual"]
+        idx = FAIXAS.index(faixa_atual)
+        if idx >= len(FAIXAS) - 1:
+            continue
+
+        historicos.append(
+            {
+                "id": gerar_id_unico("hist_grad"),
+                "alunoId": aluno["id"],
+                "faixaAnterior": faixa_atual,
+                "grauAnterior": aluno["statusGraduacao"]["graus"],
+                "faixaNova": FAIXAS[idx + 1],
+                "grauNovo": random.randint(0, 4),
+                "data": to_millis(datetime.now() - timedelta(days=random.randint(45, 365))),
+                "observacao": fake.sentence(nb_words=5) if random.random() > 0.5 else None,
+            }
+        )
+
+    return historicos
 
 
-def salvar_no_firestore(colecao: str, documentos: List[Dict]):
-    """Salva documentos no Firestore."""
-    print(f"Salvando {len(documentos)} documentos na coleção '{colecao}'...")
+def salvar_no_firestore(colecao: str, documentos: List[Dict]) -> None:
+    print(f"Salvando {len(documentos)} documentos em '{colecao}'...")
+    if not documentos:
+        print("  - sem documentos")
+        return
+
     batch = db.batch()
-    
-    for i, doc in enumerate(documentos):
-        doc_ref = db.collection(colecao).document(doc['id'])
+    for idx, doc in enumerate(documentos, start=1):
+        doc_ref = db.collection(colecao).document(doc["id"])
         batch.set(doc_ref, doc)
-        
-        # Firestore tem limite de 500 operações por batch
-        if (i + 1) % 500 == 0:
+
+        if idx % 450 == 0:
             batch.commit()
             batch = db.batch()
-            print(f"  ... {i + 1}/{len(documentos)} salvo")
-    
-    if len(documentos) > 0:
-        batch.commit()
-    print(f"✓ {colecao} concluído")
+
+    batch.commit()
+    print("  - concluido")
 
 
-def main():
-    """Função principal."""
-    print("🚀 Iniciando geração de dados fake para Firestore...\n")
-    
+def main() -> None:
+    print("Iniciando reset + seed do Firebase...\n")
+
+    limpar_firestore()
+
+    # Garante documentos de usuarios admin/professores respeitando UIDs fixos.
+    admin_email = upsert_auth_user(
+        uid=ADMIN_ACCOUNT["uid"],
+        email=ADMIN_ACCOUNT["email"],
+        display_name=ADMIN_ACCOUNT["nome"],
+    )
+
+    professores: List[Dict] = []
+    users_docs: List[Dict] = [
+        {
+            "id": ADMIN_ACCOUNT["uid"],
+            "userId": ADMIN_ACCOUNT["uid"],
+            "nome": ADMIN_ACCOUNT["nome"],
+            "email": admin_email.lower(),
+            "role": "admin",
+            "isAtivo": True,
+            "createdAt": firestore.SERVER_TIMESTAMP,
+            "updatedAt": firestore.SERVER_TIMESTAMP,
+        }
+    ]
+
+    for professor_cfg in PROFESSOR_ACCOUNTS:
+        prof_email = upsert_auth_user(
+            uid=professor_cfg["uid"],
+            email=professor_cfg["email"],
+            display_name=professor_cfg["nome"],
+        )
+
+        professores.append(
+            {
+                "id": professor_cfg["uid"],
+                "nome": professor_cfg["nome"],
+                "turmasIds": [],
+                "isAtivo": True,
+            }
+        )
+
+        users_docs.append(
+            {
+                "id": professor_cfg["uid"],
+                "userId": professor_cfg["uid"],
+                "nome": professor_cfg["nome"],
+                "email": prof_email.lower(),
+                "role": "professor",
+                "isAtivo": True,
+                "createdAt": firestore.SERVER_TIMESTAMP,
+                "updatedAt": firestore.SERVER_TIMESTAMP,
+            }
+        )
+
+    turmas = criar_turmas(professores)
+    alunos, credenciais_alunos = criar_contas_e_documentos_alunos(turmas)
+
+    # users docs para alunos
+    for aluno in alunos:
+        users_docs.append(
+            {
+                "id": aluno["id"],
+                "userId": aluno["id"],
+                "nome": aluno["nome"],
+                "email": aluno["email"].lower(),
+                "role": "student",
+                "isAtivo": True,
+                "createdAt": firestore.SERVER_TIMESTAMP,
+                "updatedAt": firestore.SERVER_TIMESTAMP,
+            }
+        )
+
+    aulas = criar_aulas_realizadas(turmas, alunos)
+    historicos_presenca = criar_historicos_presenca(alunos)
+    historicos_graduacao = criar_historicos_graduacao(alunos)
+
+    salvar_no_firestore("users", users_docs)
+    salvar_no_firestore("professores", professores)
+    salvar_no_firestore("turmas", turmas)
+    salvar_no_firestore("alunos", alunos)
+    salvar_no_firestore("aulas_realizadas", aulas)
+    salvar_no_firestore("historicos_presenca", historicos_presenca)
+    salvar_no_firestore("historicos_graduacao", historicos_graduacao)
+
+    print("\nSeed finalizado com sucesso.")
+    print("Resumo:")
+    print(f"  - users: {len(users_docs)}")
+    print(f"  - professores: {len(professores)}")
+    print(f"  - turmas: {len(turmas)}")
+    print(f"  - alunos: {len(alunos)}")
+    print(f"  - aulas_realizadas: {len(aulas)}")
+    print(f"  - historicos_presenca: {len(historicos_presenca)}")
+    print(f"  - historicos_graduacao: {len(historicos_graduacao)}")
+
+    print("\nCredenciais para teste (3 alunos):")
+    for aluno in credenciais_alunos[:3]:
+        print(f"  - email: {aluno['email']} | senha: {aluno['senha']} | uid: {aluno['uid']}")
+
+
+def _print_auth_clock_hint(exc: Exception) -> bool:
+    message = str(exc)
+    is_invalid_grant = "invalid_grant" in message and "Token must be a short-lived token" in message
+
+    if not is_invalid_grant:
+        return False
+
+    print("\nERRO DE AUTENTICACAO COM FIREBASE")
+    print(
+        "Causa provavel: relogio do Windows fora de sincronia (iat/exp do JWT fora da janela)."
+    )
+    print("\nComo corrigir:")
+    print("1. Abra o PowerShell como Administrador.")
+    print("2. Execute: w32tm /resync /force")
+    print("3. Confirme com: w32tm /query /status")
+    print("4. Rode o script novamente: python generate_fakes.py")
+    print(
+        "\nSe persistir, gere uma nova chave serviceAccountKey.json no Firebase Console e substitua a atual."
+    )
+    return True
+
+
+if __name__ == "__main__":
     try:
-        # 1. Criar e salvar Professores
-        print("📚 Gerando Professores...")
-        professors = criar_professors()
-        salvar_no_firestore('professores', professors)
-        print()
-        
-        # 2. Criar e salvar Turmas
-        print("📚 Gerando Turmas...")
-        turmas = criar_turmas(professors)
-        salvar_no_firestore('turmas', turmas)
-        # Atualizar professores com turmasIds
-        salvar_no_firestore('professores', professors)
-        print()
-        
-        # 3. Criar e salvar Alunos
-        print("📚 Gerando Alunos...")
-        alunos = criar_alunos(turmas)
-        salvar_no_firestore('alunos', alunos)
-        print()
-        
-        # 4. Criar e salvar Aulas Realizadas
-        print("📚 Gerando Aulas Realizadas...")
-        aulas = criar_aulas_realizadas(turmas, alunos)
-        salvar_no_firestore('aulas_realizadas', aulas)
-        print()
-        
-        # 5. Criar e salvar Históricos de Presença
-        print("📚 Gerando Históricos de Presença...")
-        historicos_pres = criar_historicos_presenca(alunos)
-        salvar_no_firestore('historicos_presenca', historicos_pres)
-        print()
-        
-        # 6. Criar e salvar Históricos de Graduação
-        print("📚 Gerando Históricos de Graduação...")
-        historicos_grad = criar_historicos_graduacao(alunos)
-        salvar_no_firestore('historicos_graduacao', historicos_grad)
-        print()
-        
-        print("✅ Todos os dados foram gerados e salvos no Firestore com sucesso!")
-        print(f"""
-Resumo:
-  - {len(professors)} Professores
-  - {len(turmas)} Turmas
-  - {len(alunos)} Alunos
-  - {len(aulas)} Aulas Realizadas
-  - {len(historicos_pres)} Históricos de Presença
-  - {len(historicos_grad)} Históricos de Graduação
-        """)
-        
-    except Exception as e:
-        print(f"❌ Erro ao gerar dados: {e}")
+        main()
+    except Exception as exc:
+        handled = _print_auth_clock_hint(exc)
+        if handled:
+            sys.exit(1)
         raise
-
-
-if __name__ == '__main__':
-    main()
